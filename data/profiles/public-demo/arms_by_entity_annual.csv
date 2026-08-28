@@ -1,0 +1,289 @@
+direction,source_entity,country_name,country_code,mapping_status,exclusion_reason,year,activity_value
+inbound,Geographic scenario: United States,United States,USA,mapped,,2000,70
+inbound,Geographic scenario: United States,United States,USA,mapped,,2001,77
+inbound,Geographic scenario: United States,United States,USA,mapped,,2002,84
+inbound,Geographic scenario: United States,United States,USA,mapped,,2003,91
+inbound,Geographic scenario: United States,United States,USA,mapped,,2004,98
+inbound,Geographic scenario: United States,United States,USA,mapped,,2005,80
+inbound,Geographic scenario: United States,United States,USA,mapped,,2006,87
+inbound,Geographic scenario: United States,United States,USA,mapped,,2007,94
+inbound,Geographic scenario: United States,United States,USA,mapped,,2008,101
+inbound,Geographic scenario: United States,United States,USA,mapped,,2009,108
+inbound,Geographic scenario: United States,United States,USA,mapped,,2010,90
+inbound,Geographic scenario: United States,United States,USA,mapped,,2011,97
+inbound,Geographic scenario: United States,United States,USA,mapped,,2012,104
+inbound,Geographic scenario: United States,United States,USA,mapped,,2013,111
+inbound,Geographic scenario: United States,United States,USA,mapped,,2014,118
+inbound,Geographic scenario: United States,United States,USA,mapped,,2015,100
+inbound,Geographic scenario: United States,United States,USA,mapped,,2016,107
+inbound,Geographic scenario: United States,United States,USA,mapped,,2017,114
+inbound,Geographic scenario: United States,United States,USA,mapped,,2018,121
+inbound,Geographic scenario: United States,United States,USA,mapped,,2019,128
+inbound,Geographic scenario: United States,United States,USA,mapped,,2020,110
+inbound,Geographic scenario: United States,United States,USA,mapped,,2021,117
+inbound,Geographic scenario: United States,United States,USA,mapped,,2022,124
+inbound,Geographic scenario: United States,United States,USA,mapped,,2023,131
+inbound,Geographic scenario: China,China,CHN,mapped,,2000,94
+inbound,Geographic scenario: China,China,CHN,mapped,,2001,101
+inbound,Geographic scenario: China,China,CHN,mapped,,2002,108
+inbound,Geographic scenario: China,China,CHN,mapped,,2003,115
+inbound,Geographic scenario: China,China,CHN,mapped,,2004,97
+inbound,Geographic scenario: China,China,CHN,mapped,,2005,104
+inbound,Geographic scenario: China,China,CHN,mapped,,2006,111
+inbound,Geographic scenario: China,China,CHN,mapped,,2007,118
+inbound,Geographic scenario: China,China,CHN,mapped,,2008,125
+inbound,Geographic scenario: China,China,CHN,mapped,,2009,107
+inbound,Geographic scenario: China,China,CHN,mapped,,2010,114
+inbound,Geographic scenario: China,China,CHN,mapped,,2011,121
+inbound,Geographic scenario: China,China,CHN,mapped,,2012,128
+inbound,Geographic scenario: China,China,CHN,mapped,,2013,135
+inbound,Geographic scenario: China,China,CHN,mapped,,2014,117
+inbound,Geographic scenario: China,China,CHN,mapped,,2015,124
+inbound,Geographic scenario: China,China,CHN,mapped,,2016,131
+inbound,Geographic scenario: China,China,CHN,mapped,,2017,138
+inbound,Geographic scenario: China,China,CHN,mapped,,2018,145
+inbound,Geographic scenario: China,China,CHN,mapped,,2019,127
+inbound,Geographic scenario: China,China,CHN,mapped,,2020,134
+inbound,Geographic scenario: China,China,CHN,mapped,,2021,141
+inbound,Geographic scenario: China,China,CHN,mapped,,2022,148
+inbound,Geographic scenario: China,China,CHN,mapped,,2023,155
+inbound,Geographic scenario: India,India,IND,mapped,,2000,118
+inbound,Geographic scenario: India,India,IND,mapped,,2001,125
+inbound,Geographic scenario: India,India,IND,mapped,,2002,132
+inbound,Geographic scenario: India,India,IND,mapped,,2003,114
+inbound,Geographic scenario: India,India,IND,mapped,,2004,121
+inbound,Geographic scenario: India,India,IND,mapped,,2005,128
+inbound,Geographic scenario: India,India,IND,mapped,,2006,135
+inbound,Geographic scenario: India,India,IND,mapped,,2007,142
+inbound,Geographic scenario: India,India,IND,mapped,,2008,124
+inbound,Geographic scenario: India,India,IND,mapped,,2009,131
+inbound,Geographic scenario: India,India,IND,mapped,,2010,138
+inbound,Geographic scenario: India,India,IND,mapped,,2011,145
+inbound,Geographic scenario: India,India,IND,mapped,,2012,152
+inbound,Geographic scenario: India,India,IND,mapped,,2013,134
+inbound,Geographic scenario: India,India,IND,mapped,,2014,141
+inbound,Geographic scenario: India,India,IND,mapped,,2015,148
+inbound,Geographic scenario: India,India,IND,mapped,,2016,155
+inbound,Geographic scenario: India,India,IND,mapped,,2017,162
+inbound,Geographic scenario: India,India,IND,mapped,,2018,144
+inbound,Geographic scenario: India,India,IND,mapped,,2019,151
+inbound,Geographic scenario: India,India,IND,mapped,,2020,158
+inbound,Geographic scenario: India,India,IND,mapped,,2021,165
+inbound,Geographic scenario: India,India,IND,mapped,,2022,172
+inbound,Geographic scenario: India,India,IND,mapped,,2023,154
+inbound,Geographic scenario: France,France,FRA,mapped,,2000,142
+inbound,Geographic scenario: France,France,FRA,mapped,,2001,149
+inbound,Geographic scenario: France,France,FRA,mapped,,2002,131
+inbound,Geographic scenario: France,France,FRA,mapped,,2003,138
+inbound,Geographic scenario: France,France,FRA,mapped,,2004,145
+inbound,Geographic scenario: France,France,FRA,mapped,,2005,152
+inbound,Geographic scenario: France,France,FRA,mapped,,2006,159
+inbound,Geographic scenario: France,France,FRA,mapped,,2007,141
+inbound,Geographic scenario: France,France,FRA,mapped,,2008,148
+inbound,Geographic scenario: France,France,FRA,mapped,,2009,155
+inbound,Geographic scenario: France,France,FRA,mapped,,2010,162
+inbound,Geographic scenario: France,France,FRA,mapped,,2011,169
+inbound,Geographic scenario: France,France,FRA,mapped,,2012,151
+inbound,Geographic scenario: France,France,FRA,mapped,,2013,158
+inbound,Geographic scenario: France,France,FRA,mapped,,2014,165
+inbound,Geographic scenario: France,France,FRA,mapped,,2015,172
+inbound,Geographic scenario: France,France,FRA,mapped,,2016,179
+inbound,Geographic scenario: France,France,FRA,mapped,,2017,161
+inbound,Geographic scenario: France,France,FRA,mapped,,2018,168
+inbound,Geographic scenario: France,France,FRA,mapped,,2019,175
+inbound,Geographic scenario: France,France,FRA,mapped,,2020,182
+inbound,Geographic scenario: France,France,FRA,mapped,,2021,189
+inbound,Geographic scenario: France,France,FRA,mapped,,2022,171
+inbound,Geographic scenario: France,France,FRA,mapped,,2023,178
+inbound,Geographic scenario: Brazil,Brazil,BRA,mapped,,2000,166
+inbound,Geographic scenario: Brazil,Brazil,BRA,mapped,,2001,148
+inbound,Geographic scenario: Brazil,Brazil,BRA,mapped,,2002,155
+inbound,Geographic scenario: Brazil,Brazil,BRA,mapped,,2003,162
+inbound,Geographic scenario: Brazil,Brazil,BRA,mapped,,2004,169
+inbound,Geographic scenario: Brazil,Brazil,BRA,mapped,,2005,176
+inbound,Geographic scenario: Brazil,Brazil,BRA,mapped,,2006,158
+inbound,Geographic scenario: Brazil,Brazil,BRA,mapped,,2007,165
+inbound,Geographic scenario: Brazil,Brazil,BRA,mapped,,2008,172
+inbound,Geographic scenario: Brazil,Brazil,BRA,mapped,,2009,179
+inbound,Geographic scenario: Brazil,Brazil,BRA,mapped,,2010,186
+inbound,Geographic scenario: Brazil,Brazil,BRA,mapped,,2011,168
+inbound,Geographic scenario: Brazil,Brazil,BRA,mapped,,2012,175
+inbound,Geographic scenario: Brazil,Brazil,BRA,mapped,,2013,182
+inbound,Geographic scenario: Brazil,Brazil,BRA,mapped,,2014,189
+inbound,Geographic scenario: Brazil,Brazil,BRA,mapped,,2015,196
+inbound,Geographic scenario: Brazil,Brazil,BRA,mapped,,2016,178
+inbound,Geographic scenario: Brazil,Brazil,BRA,mapped,,2017,185
+inbound,Geographic scenario: Brazil,Brazil,BRA,mapped,,2018,192
+inbound,Geographic scenario: Brazil,Brazil,BRA,mapped,,2019,199
+inbound,Geographic scenario: Brazil,Brazil,BRA,mapped,,2020,206
+inbound,Geographic scenario: Brazil,Brazil,BRA,mapped,,2021,188
+inbound,Geographic scenario: Brazil,Brazil,BRA,mapped,,2022,195
+inbound,Geographic scenario: Brazil,Brazil,BRA,mapped,,2023,202
+inbound,Unmapped fictional scenario,,,excluded,No geographic scenario mapping,2000,12
+inbound,Unmapped fictional scenario,,,excluded,No geographic scenario mapping,2001,13
+inbound,Unmapped fictional scenario,,,excluded,No geographic scenario mapping,2002,14
+inbound,Unmapped fictional scenario,,,excluded,No geographic scenario mapping,2003,15
+inbound,Unmapped fictional scenario,,,excluded,No geographic scenario mapping,2004,12
+inbound,Unmapped fictional scenario,,,excluded,No geographic scenario mapping,2005,13
+inbound,Unmapped fictional scenario,,,excluded,No geographic scenario mapping,2006,14
+inbound,Unmapped fictional scenario,,,excluded,No geographic scenario mapping,2007,15
+inbound,Unmapped fictional scenario,,,excluded,No geographic scenario mapping,2008,12
+inbound,Unmapped fictional scenario,,,excluded,No geographic scenario mapping,2009,13
+inbound,Unmapped fictional scenario,,,excluded,No geographic scenario mapping,2010,14
+inbound,Unmapped fictional scenario,,,excluded,No geographic scenario mapping,2011,15
+inbound,Unmapped fictional scenario,,,excluded,No geographic scenario mapping,2012,12
+inbound,Unmapped fictional scenario,,,excluded,No geographic scenario mapping,2013,13
+inbound,Unmapped fictional scenario,,,excluded,No geographic scenario mapping,2014,14
+inbound,Unmapped fictional scenario,,,excluded,No geographic scenario mapping,2015,15
+inbound,Unmapped fictional scenario,,,excluded,No geographic scenario mapping,2016,12
+inbound,Unmapped fictional scenario,,,excluded,No geographic scenario mapping,2017,13
+inbound,Unmapped fictional scenario,,,excluded,No geographic scenario mapping,2018,14
+inbound,Unmapped fictional scenario,,,excluded,No geographic scenario mapping,2019,15
+inbound,Unmapped fictional scenario,,,excluded,No geographic scenario mapping,2020,12
+inbound,Unmapped fictional scenario,,,excluded,No geographic scenario mapping,2021,13
+inbound,Unmapped fictional scenario,,,excluded,No geographic scenario mapping,2022,14
+inbound,Unmapped fictional scenario,,,excluded,No geographic scenario mapping,2023,15
+outbound,Geographic scenario: United States,United States,USA,mapped,,2000,91
+outbound,Geographic scenario: United States,United States,USA,mapped,,2001,98
+outbound,Geographic scenario: United States,United States,USA,mapped,,2002,105
+outbound,Geographic scenario: United States,United States,USA,mapped,,2003,112
+outbound,Geographic scenario: United States,United States,USA,mapped,,2004,119
+outbound,Geographic scenario: United States,United States,USA,mapped,,2005,101
+outbound,Geographic scenario: United States,United States,USA,mapped,,2006,108
+outbound,Geographic scenario: United States,United States,USA,mapped,,2007,115
+outbound,Geographic scenario: United States,United States,USA,mapped,,2008,122
+outbound,Geographic scenario: United States,United States,USA,mapped,,2009,129
+outbound,Geographic scenario: United States,United States,USA,mapped,,2010,111
+outbound,Geographic scenario: United States,United States,USA,mapped,,2011,118
+outbound,Geographic scenario: United States,United States,USA,mapped,,2012,125
+outbound,Geographic scenario: United States,United States,USA,mapped,,2013,132
+outbound,Geographic scenario: United States,United States,USA,mapped,,2014,139
+outbound,Geographic scenario: United States,United States,USA,mapped,,2015,121
+outbound,Geographic scenario: United States,United States,USA,mapped,,2016,128
+outbound,Geographic scenario: United States,United States,USA,mapped,,2017,135
+outbound,Geographic scenario: United States,United States,USA,mapped,,2018,142
+outbound,Geographic scenario: United States,United States,USA,mapped,,2019,149
+outbound,Geographic scenario: United States,United States,USA,mapped,,2020,131
+outbound,Geographic scenario: United States,United States,USA,mapped,,2021,138
+outbound,Geographic scenario: United States,United States,USA,mapped,,2022,145
+outbound,Geographic scenario: United States,United States,USA,mapped,,2023,152
+outbound,Geographic scenario: China,China,CHN,mapped,,2000,115
+outbound,Geographic scenario: China,China,CHN,mapped,,2001,122
+outbound,Geographic scenario: China,China,CHN,mapped,,2002,129
+outbound,Geographic scenario: China,China,CHN,mapped,,2003,136
+outbound,Geographic scenario: China,China,CHN,mapped,,2004,118
+outbound,Geographic scenario: China,China,CHN,mapped,,2005,125
+outbound,Geographic scenario: China,China,CHN,mapped,,2006,132
+outbound,Geographic scenario: China,China,CHN,mapped,,2007,139
+outbound,Geographic scenario: China,China,CHN,mapped,,2008,146
+outbound,Geographic scenario: China,China,CHN,mapped,,2009,128
+outbound,Geographic scenario: China,China,CHN,mapped,,2010,135
+outbound,Geographic scenario: China,China,CHN,mapped,,2011,142
+outbound,Geographic scenario: China,China,CHN,mapped,,2012,149
+outbound,Geographic scenario: China,China,CHN,mapped,,2013,156
+outbound,Geographic scenario: China,China,CHN,mapped,,2014,138
+outbound,Geographic scenario: China,China,CHN,mapped,,2015,145
+outbound,Geographic scenario: China,China,CHN,mapped,,2016,152
+outbound,Geographic scenario: China,China,CHN,mapped,,2017,159
+outbound,Geographic scenario: China,China,CHN,mapped,,2018,166
+outbound,Geographic scenario: China,China,CHN,mapped,,2019,148
+outbound,Geographic scenario: China,China,CHN,mapped,,2020,155
+outbound,Geographic scenario: China,China,CHN,mapped,,2021,162
+outbound,Geographic scenario: China,China,CHN,mapped,,2022,169
+outbound,Geographic scenario: China,China,CHN,mapped,,2023,176
+outbound,Geographic scenario: India,India,IND,mapped,,2000,139
+outbound,Geographic scenario: India,India,IND,mapped,,2001,146
+outbound,Geographic scenario: India,India,IND,mapped,,2002,153
+outbound,Geographic scenario: India,India,IND,mapped,,2003,135
+outbound,Geographic scenario: India,India,IND,mapped,,2004,142
+outbound,Geographic scenario: India,India,IND,mapped,,2005,149
+outbound,Geographic scenario: India,India,IND,mapped,,2006,156
+outbound,Geographic scenario: India,India,IND,mapped,,2007,163
+outbound,Geographic scenario: India,India,IND,mapped,,2008,145
+outbound,Geographic scenario: India,India,IND,mapped,,2009,152
+outbound,Geographic scenario: India,India,IND,mapped,,2010,159
+outbound,Geographic scenario: India,India,IND,mapped,,2011,166
+outbound,Geographic scenario: India,India,IND,mapped,,2012,173
+outbound,Geographic scenario: India,India,IND,mapped,,2013,155
+outbound,Geographic scenario: India,India,IND,mapped,,2014,162
+outbound,Geographic scenario: India,India,IND,mapped,,2015,169
+outbound,Geographic scenario: India,India,IND,mapped,,2016,176
+outbound,Geographic scenario: India,India,IND,mapped,,2017,183
+outbound,Geographic scenario: India,India,IND,mapped,,2018,165
+outbound,Geographic scenario: India,India,IND,mapped,,2019,172
+outbound,Geographic scenario: India,India,IND,mapped,,2020,179
+outbound,Geographic scenario: India,India,IND,mapped,,2021,186
+outbound,Geographic scenario: India,India,IND,mapped,,2022,193
+outbound,Geographic scenario: India,India,IND,mapped,,2023,175
+outbound,Geographic scenario: France,France,FRA,mapped,,2000,163
+outbound,Geographic scenario: France,France,FRA,mapped,,2001,170
+outbound,Geographic scenario: France,France,FRA,mapped,,2002,152
+outbound,Geographic scenario: France,France,FRA,mapped,,2003,159
+outbound,Geographic scenario: France,France,FRA,mapped,,2004,166
+outbound,Geographic scenario: France,France,FRA,mapped,,2005,173
+outbound,Geographic scenario: France,France,FRA,mapped,,2006,180
+outbound,Geographic scenario: France,France,FRA,mapped,,2007,162
+outbound,Geographic scenario: France,France,FRA,mapped,,2008,169
+outbound,Geographic scenario: France,France,FRA,mapped,,2009,176
+outbound,Geographic scenario: France,France,FRA,mapped,,2010,183
+outbound,Geographic scenario: France,France,FRA,mapped,,2011,190
+outbound,Geographic scenario: France,France,FRA,mapped,,2012,172
+outbound,Geographic scenario: France,France,FRA,mapped,,2013,179
+outbound,Geographic scenario: France,France,FRA,mapped,,2014,186
+outbound,Geographic scenario: France,France,FRA,mapped,,2015,193
+outbound,Geographic scenario: France,France,FRA,mapped,,2016,200
+outbound,Geographic scenario: France,France,FRA,mapped,,2017,182
+outbound,Geographic scenario: France,France,FRA,mapped,,2018,189
+outbound,Geographic scenario: France,France,FRA,mapped,,2019,196
+outbound,Geographic scenario: France,France,FRA,mapped,,2020,203
+outbound,Geographic scenario: France,France,FRA,mapped,,2021,210
+outbound,Geographic scenario: France,France,FRA,mapped,,2022,192
+outbound,Geographic scenario: France,France,FRA,mapped,,2023,199
+outbound,Geographic scenario: Brazil,Brazil,BRA,mapped,,2000,187
+outbound,Geographic scenario: Brazil,Brazil,BRA,mapped,,2001,169
+outbound,Geographic scenario: Brazil,Brazil,BRA,mapped,,2002,176
+outbound,Geographic scenario: Brazil,Brazil,BRA,mapped,,2003,183
+outbound,Geographic scenario: Brazil,Brazil,BRA,mapped,,2004,190
+outbound,Geographic scenario: Brazil,Brazil,BRA,mapped,,2005,197
+outbound,Geographic scenario: Brazil,Brazil,BRA,mapped,,2006,179
+outbound,Geographic scenario: Brazil,Brazil,BRA,mapped,,2007,186
+outbound,Geographic scenario: Brazil,Brazil,BRA,mapped,,2008,193
+outbound,Geographic scenario: Brazil,Brazil,BRA,mapped,,2009,200
+outbound,Geographic scenario: Brazil,Brazil,BRA,mapped,,2010,207
+outbound,Geographic scenario: Brazil,Brazil,BRA,mapped,,2011,189
+outbound,Geographic scenario: Brazil,Brazil,BRA,mapped,,2012,196
+outbound,Geographic scenario: Brazil,Brazil,BRA,mapped,,2013,203
+outbound,Geographic scenario: Brazil,Brazil,BRA,mapped,,2014,210
+outbound,Geographic scenario: Brazil,Brazil,BRA,mapped,,2015,217
+outbound,Geographic scenario: Brazil,Brazil,BRA,mapped,,2016,199
+outbound,Geographic scenario: Brazil,Brazil,BRA,mapped,,2017,206
+outbound,Geographic scenario: Brazil,Brazil,BRA,mapped,,2018,213
+outbound,Geographic scenario: Brazil,Brazil,BRA,mapped,,2019,220
+outbound,Geographic scenario: Brazil,Brazil,BRA,mapped,,2020,227
+outbound,Geographic scenario: Brazil,Brazil,BRA,mapped,,2021,209
+outbound,Geographic scenario: Brazil,Brazil,BRA,mapped,,2022,216
+outbound,Geographic scenario: Brazil,Brazil,BRA,mapped,,2023,223
+outbound,Unmapped fictional scenario,,,excluded,No geographic scenario mapping,2000,15
+outbound,Unmapped fictional scenario,,,excluded,No geographic scenario mapping,2001,16
+outbound,Unmapped fictional scenario,,,excluded,No geographic scenario mapping,2002,17
+outbound,Unmapped fictional scenario,,,excluded,No geographic scenario mapping,2003,18
+outbound,Unmapped fictional scenario,,,excluded,No geographic scenario mapping,2004,15
+outbound,Unmapped fictional scenario,,,excluded,No geographic scenario mapping,2005,16
+outbound,Unmapped fictional scenario,,,excluded,No geographic scenario mapping,2006,17
+outbound,Unmapped fictional scenario,,,excluded,No geographic scenario mapping,2007,18
+outbound,Unmapped fictional scenario,,,excluded,No geographic scenario mapping,2008,15
+outbound,Unmapped fictional scenario,,,excluded,No geographic scenario mapping,2009,16
+outbound,Unmapped fictional scenario,,,excluded,No geographic scenario mapping,2010,17
+outbound,Unmapped fictional scenario,,,excluded,No geographic scenario mapping,2011,18
+outbound,Unmapped fictional scenario,,,excluded,No geographic scenario mapping,2012,15
+outbound,Unmapped fictional scenario,,,excluded,No geographic scenario mapping,2013,16
+outbound,Unmapped fictional scenario,,,excluded,No geographic scenario mapping,2014,17
+outbound,Unmapped fictional scenario,,,excluded,No geographic scenario mapping,2015,18
+outbound,Unmapped fictional scenario,,,excluded,No geographic scenario mapping,2016,15
+outbound,Unmapped fictional scenario,,,excluded,No geographic scenario mapping,2017,16
+outbound,Unmapped fictional scenario,,,excluded,No geographic scenario mapping,2018,17
+outbound,Unmapped fictional scenario,,,excluded,No geographic scenario mapping,2019,18
+outbound,Unmapped fictional scenario,,,excluded,No geographic scenario mapping,2020,15
+outbound,Unmapped fictional scenario,,,excluded,No geographic scenario mapping,2021,16
+outbound,Unmapped fictional scenario,,,excluded,No geographic scenario mapping,2022,17
+outbound,Unmapped fictional scenario,,,excluded,No geographic scenario mapping,2023,18
