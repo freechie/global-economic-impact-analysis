@@ -4,6 +4,15 @@
 
 This repository contains a public, runnable notebook with 14 interactive Plotly figures. Five figures use World Bank GDP open data. Nine figures use deterministic synthetic demonstration data. Synthetic values are fictional and are not observed measurements.
 
+The public demo is self-contained. Clone it to inspect, rerun, and modify every chart without access to the original licensed datasets. You can also [open the executed notebook on GitHub](Global%20Economic%20Impact%20Analysis.ipynb) without installing Python.
+
+## Implementation
+
+- [`src/data_loader.py`](src/data_loader.py) validates profile manifests, SHA-256 hashes, provenance records, and table schemas before exposing data to the notebook.
+- [`scripts/build_notebook.py`](scripts/build_notebook.py) rebuilds the notebook and all 14 saved Plotly figures from source.
+- [`tests/`](tests/) contains 20 tests for data cleaning, profile validation, chart provenance, notebook integrity, and public-release safety.
+- [GitHub Actions](https://github.com/freechie/global-economic-impact-analysis/actions/workflows/verify.yml) recreates the locked environment and runs the same `make verify` command documented below.
+
 ## Preview
 
 ![World nominal GDP over time](docs/previews/world-gdp-trend.png)
