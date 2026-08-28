@@ -6,7 +6,18 @@ import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
-SCANNED_SUFFIXES = {".csv", ".ipynb", ".json", ".md", ".py", ".txt"}
+SCANNED_SUFFIXES = {
+    ".csv",
+    ".ipynb",
+    ".json",
+    ".lock",
+    ".md",
+    ".py",
+    ".toml",
+    ".txt",
+    ".yaml",
+    ".yml",
+}
 LEGACY_TERMS = (
     r"\bBloomberg\b",
     r"\bSIPRI\b",

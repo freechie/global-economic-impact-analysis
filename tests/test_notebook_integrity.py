@@ -108,10 +108,27 @@ def test_notebook_has_no_raw_data_appendix():
     assert "source-data appendix" not in source
 
 
-def test_readme_uses_public_paths_and_has_no_image_gallery():
+def test_readme_uses_public_paths_and_safe_previews():
     readme = (ROOT / "README.md").read_text()
+    image_references = re.findall(r"!\[[^\]]*\]\(([^)]+)\)", readme)
+    preview_references = {
+        reference
+        for reference in image_references
+        if reference.startswith("docs/previews/")
+    }
 
     assert "data/profiles/public-demo" in readme
-    assert "scripts/build_notebook.py --execute" in readme
+    assert "uv sync --locked --dev" in readme
+    assert "make verify" in readme
     assert "GEIA_DATA_DIR" in readme
-    assert not re.search(r"!\[[^\]]*\]\([^)]*\)", readme)
+    assert preview_references == {
+        "docs/previews/selected-gdp-trajectories.png",
+        "docs/previews/synthetic-aircraft-orders.png",
+        "docs/previews/world-gdp-trend.png",
+    }
+    assert all((ROOT / reference).is_file() for reference in preview_references)
+    assert all(
+        (ROOT / reference).read_bytes().startswith(b"\x89PNG\r\n\x1a\n")
+        for reference in preview_references
+    )
+    assert not any(reference.startswith("img/") for reference in image_references)

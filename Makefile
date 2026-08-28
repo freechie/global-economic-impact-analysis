@@ -1,12 +1,15 @@
-PYTHON ?= python3
+PYTHON ?= uv run python
 
-.PHONY: generate notebook test verify
+.PHONY: generate notebook previews test verify
 
 generate:
 	$(PYTHON) scripts/generate_public_profile.py
 
 notebook: generate
 	$(PYTHON) scripts/build_notebook.py --execute
+
+previews: notebook
+	$(PYTHON) scripts/generate_previews.py
 
 test:
 	$(PYTHON) -m pytest -q

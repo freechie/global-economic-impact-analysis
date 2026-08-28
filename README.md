@@ -1,23 +1,30 @@
 # Global economic impact analysis
 
+[![Verify](https://github.com/freechie/global-economic-impact-analysis/actions/workflows/verify.yml/badge.svg)](https://github.com/freechie/global-economic-impact-analysis/actions/workflows/verify.yml)
+
 This repository contains a public, runnable notebook with 14 interactive Plotly figures. Five figures use World Bank GDP open data. Nine figures use deterministic synthetic demonstration data. Synthetic values are fictional and are not observed measurements.
+
+## Preview
+
+![World nominal GDP over time](docs/previews/world-gdp-trend.png)
+
+![Selected nominal GDP trajectories](docs/previews/selected-gdp-trajectories.png)
+
+![Synthetic monthly aircraft orders](docs/previews/synthetic-aircraft-orders.png)
 
 ## Run the public notebook
 
-Use Python 3.13 with the locked package versions in `requirements-lock.txt`.
+Install [uv](https://docs.astral.sh/uv/getting-started/installation/). The project pins Python 3.13 and all direct and transitive dependencies in `uv.lock`.
 
 ```bash
-python3 -m pip install -r requirements-lock.txt
-python3 scripts/generate_public_profile.py
-python3 scripts/build_notebook.py --execute
-python3 -m pytest -q
-python3 scripts/verify_public_release.py
+uv sync --locked --dev
+make verify
 ```
 
-Run the full check with one command after installing the dependencies.
+Regenerate the three public-safe README previews after changing a chart. Static preview generation requires Chrome.
 
 ```bash
-make verify
+make previews
 ```
 
 The generator reads the tracked `data/profiles/public-demo/gdp_annual.csv` on a fresh public clone. Pass `--gdp-source` to normalize a separately downloaded World Bank GDP CSV.
@@ -56,3 +63,7 @@ Each Plotly figure stores a unique chart ID and provenance disclosure in `layout
 `gdp_annual.csv` contains the World Bank indicator [GDP (current US$), code NY.GDP.MKTP.CD](https://data.worldbank.org/indicator/NY.GDP.MKTP.CD). The World Bank makes the data available under the [Creative Commons Attribution 4.0 license](https://datacatalog.worldbank.org/public-licenses#cc-by). The source data were normalized to canonical columns, invalid and nonpositive observations were removed, and aggregate flags were added. The profile manifest records those changes, the covered years, source URL, series code, license, and file hash.
 
 See [`data/README.md`](data/README.md) for the canonical table contract and profile format.
+
+## License
+
+The source code is available under the [MIT License](LICENSE). The World Bank GDP data retain their separate CC BY 4.0 license and attribution requirements.
