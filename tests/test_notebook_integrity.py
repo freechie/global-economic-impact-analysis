@@ -152,9 +152,9 @@ def test_readme_leads_with_computed_gdp_findings():
     assert "4.574%" in readme
     assert "China passed Japan in 2010" in readme
     assert "ten-year projection is published" in readme
-    assert "2009: current -5.2%, constant 2015 -1.3%." in readme
-    assert "2015: current -5.5%, constant 2015 3.1%." in readme
-    assert "2020: current -2.7%, constant 2015 -2.9%." in readme
+    assert "2009: current -5.2%, constant 2015 -1.3%" in readme
+    assert "2015: current -5.5%, constant 2015 3.1%" in readme
+    assert "2020: current -2.7%, constant 2015 -2.9%" in readme
     assert "2015 is a dollar year" in readme
     assert "2009 and 2020 are real contractions" in readme
 
