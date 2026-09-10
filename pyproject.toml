@@ -1,7 +1,7 @@
 [project]
 name = "global-economic-impact-analysis"
 version = "0.1.0"
-description = "Reproducible economic-data analysis with interactive Plotly charts."
+description = "World Bank GDP notebook with Plotly charts."
 readme = "README.md"
 requires-python = ">=3.13,<3.14"
 license = "MIT"
@@ -12,6 +12,7 @@ dependencies = [
     "nbformat==5.10.4",
     "pandas==3.0.3",
     "plotly==6.7.0",
+    "statsmodels==0.14.6",
 ]
 
 [dependency-groups]

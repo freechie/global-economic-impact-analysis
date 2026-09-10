@@ -1,8 +1,6 @@
 # Public demo profile
 
-This directory is tracked and safe for public notebook execution. `gdp_annual.csv` is World Bank Open Data under CC BY 4.0. The other CSV files contain deterministic synthetic demonstration data. Their values are fictional and are not observed measurements.
-
-Regenerate the CSV files and `profile.json` with:
+`gdp_annual.csv` is World Bank Open Data, CC BY 4.0. The other CSVs are unused synthetic tables that keep the eight-table loader working. The notebook does not plot them. Their values are fictional.
 
 ```bash
 python3 scripts/generate_public_profile.py

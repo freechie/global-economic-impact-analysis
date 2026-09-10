@@ -29,9 +29,7 @@ def build_notebook() -> nbformat.NotebookNode:
             """
 # Global economic impact analysis
 
-This notebook contains 14 interactive Plotly figures. Figures 1 through 5 use World Bank Open Data for GDP under the CC BY 4.0 license. Figures 6 through 14 use deterministic synthetic demonstration data. Synthetic values are fictional and are not observed measurements.
-
-The `public-demo` profile is the default. Set `GEIA_DATA_DIR` before execution to select a complete compatible local profile. The loader validates the selected profile and never falls back to another directory.
+Every chart uses World Bank GDP in current US dollars, license CC BY 4.0. Numbers come from `gdp_annual.csv`. Set `GEIA_DATA_DIR` to point at another complete profile. The loader does not fall back to `public-demo`.
 """,
         ),
         code(
@@ -40,7 +38,9 @@ The `public-demo` profile is the default. Set `GEIA_DATA_DIR` before execution t
 from pathlib import Path
 import sys
 
+import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 import plotly.io as pio
 
 ROOT = Path.cwd()
@@ -48,29 +48,68 @@ if not (ROOT / "src").is_dir():
     ROOT = ROOT.parent
 sys.path.insert(0, str(ROOT))
 
-from src.analysis_utils import annual_percent_change, country_gdp, latest_gdp_ranking
+from src.analysis_utils import (
+    SELECTED_TRAJECTORY_COUNTRIES,
+    annual_percent_change,
+    country_gdp,
+    expanding_arima_backtest,
+    latest_gdp_ranking,
+    nominal_gdp_story,
+    projection_decision_text,
+    world_gdp_series,
+)
 from src.data_loader import load_analysis_bundle
 
 pio.renderers.default = "plotly_mimetype"
 bundle = load_analysis_bundle()
+story = nominal_gdp_story(bundle.gdp_annual)
+backtest = expanding_arima_backtest(world_gdp_series(bundle.gdp_annual))
 OPEN_DISCLOSURE = "World Bank Open Data, GDP (current US$). License: CC BY 4.0."
-SYNTHETIC_DISCLOSURE = "Synthetic demonstration data. Values are fictional and are not observed measurements."
 
-def disclose(fig, chart_id, title, classification, table_name):
-    disclosure = OPEN_DISCLOSURE if classification == "open" else SYNTHETIC_DISCLOSURE
+def disclose(fig, chart_id, title, table_name):
     fig.update_layout(
-        title={"text": f"{title}<br><sup>{disclosure}</sup>"},
+        title={"text": f"{title}<br><sup>{OPEN_DISCLOSURE}</sup>"},
         template="plotly_white",
         autosize=True,
         meta={
             "chart_id": chart_id,
-            "classification": classification,
-            "provenance": disclosure,
+            "classification": "open",
+            "provenance": OPEN_DISCLOSURE,
             "table": table_name,
             "profile_id": bundle.profile.profile_id,
         },
     )
     return fig
+
+def trillions(value):
+    return f"${value / 1e12:.2f} trillion"
+""",
+        ),
+        markdown("findings-heading", "## Findings"),
+        code(
+            "findings",
+            """
+declines = ", ".join(
+    f"{year} {change:.1f}%" for year, change in story.sharpest_declines
+)
+print(
+    f"World nominal GDP rose from {trillions(story.start_usd)} in {story.start_year} "
+    f"to {trillions(story.end_usd)} in {story.end_year}, a {story.growth_multiple:.1f}× increase."
+)
+print(
+    f"The sharpest current-dollar year-over-year declines are {declines}. "
+    "The 2015 drop is mostly a strong dollar, not a collapse in world output."
+)
+print(
+    f"China was {story.china_share_1990_pct:.1f}% of U.S. GDP in 1990 and "
+    f"{story.china_share_latest_pct:.1f}% in {story.latest_year}. "
+    f"China passed Japan in {story.china_passes_japan_year}."
+)
+print(
+    f"Selected ARIMA{backtest.order}: {backtest.arima_mape:.3f}% MAPE; "
+    f"naive baseline: {backtest.naive_mape:.3f}% MAPE."
+)
+print(projection_decision_text(backtest))
 """,
         ),
         markdown("open-heading", "## Open-data GDP figures"),
@@ -79,16 +118,38 @@ def disclose(fig, chart_id, title, classification, table_name):
             """
 world = bundle.gdp_annual.loc[bundle.gdp_annual["country_code"] == "WLD"]
 fig = px.line(world, x="year", y="nominal_gdp_usd", labels={"nominal_gdp_usd": "Current US$", "year": "Year"})
-disclose(fig, "gdp-world-trend", "1. World nominal GDP over time", "open", "gdp_annual").show()
+for year, label in ((2009, "2009"), (2015, "2015 FX"), (2020, "2020")):
+    fig.add_vline(x=year, line_dash="dot", annotation_text=label, annotation_position="top")
+disclose(fig, "gdp-world-trend", "1. World nominal GDP over time", "gdp_annual").show()
+""",
+        ),
+        markdown(
+            "chart-01-note",
+            """
+Current-dollar World GDP mixes real output, inflation, and exchange rates. 2015 is the largest drop in this series. It is not a 2009-scale or 2020-scale world recession.
 """,
         ),
         code(
             "chart-02",
             """
-selected_names = ["United States", "China", "Japan", "Germany", "India"]
-selected = country_gdp(bundle.gdp_annual).loc[lambda frame: frame["country_name"].isin(selected_names)]
-fig = px.line(selected, x="year", y="nominal_gdp_usd", color="country_name", labels={"nominal_gdp_usd": "Current US$", "country_name": "Country", "year": "Year"})
-disclose(fig, "gdp-selected-trajectories", "2. Selected nominal GDP trajectories", "open", "gdp_annual").show()
+selected = country_gdp(bundle.gdp_annual).loc[
+    lambda frame: frame["country_name"].isin(SELECTED_TRAJECTORY_COUNTRIES)
+]
+fig = px.line(
+    selected,
+    x="year",
+    y="nominal_gdp_usd",
+    color="country_name",
+    labels={"nominal_gdp_usd": "Current US$", "country_name": "Country", "year": "Year"},
+)
+fig.update_yaxes(type="log")
+disclose(fig, "gdp-selected-trajectories", "2. Selected nominal GDP trajectories, log scale", "gdp_annual").show()
+""",
+        ),
+        markdown(
+            "chart-02-note",
+            """
+Log scale keeps early China and India visible. A linear axis hides them behind the United States.
 """,
         ),
         code(
@@ -96,7 +157,7 @@ disclose(fig, "gdp-selected-trajectories", "2. Selected nominal GDP trajectories
             """
 growth = annual_percent_change(selected, group_column="country_name", value_column="nominal_gdp_usd")
 fig = px.line(growth.dropna(subset=["annual_change_pct"]), x="year", y="annual_change_pct", color="country_name", labels={"annual_change_pct": "Annual change (%)", "country_name": "Country", "year": "Year"})
-disclose(fig, "gdp-annual-change", "3. Annual nominal GDP change", "open", "gdp_annual").show()
+disclose(fig, "gdp-annual-change", "3. Annual nominal GDP change", "gdp_annual").show()
 """,
         ),
         code(
@@ -104,7 +165,7 @@ disclose(fig, "gdp-annual-change", "3. Annual nominal GDP change", "open", "gdp_
             """
 countries = country_gdp(bundle.gdp_annual)
 fig = px.choropleth(countries, locations="country_code", color="nominal_gdp_usd", hover_name="country_name", animation_frame="year", color_continuous_scale="Blues", labels={"nominal_gdp_usd": "Current US$", "year": "Year"})
-disclose(fig, "gdp-country-map", "4. Nominal GDP by country over time", "open", "gdp_annual").show()
+disclose(fig, "gdp-country-map", "4. Nominal GDP by country over time", "gdp_annual").show()
 """,
         ),
         code(
@@ -113,83 +174,68 @@ disclose(fig, "gdp-country-map", "4. Nominal GDP by country over time", "open", 
 ranking = latest_gdp_ranking(bundle.gdp_annual, limit=15)
 ranking_year = int(ranking["year"].iloc[0])
 fig = px.bar(ranking, x="nominal_gdp_usd", y="country_name", orientation="h", labels={"nominal_gdp_usd": "Current US$", "country_name": "Country"})
-disclose(fig, "gdp-latest-ranking", f"5. Largest nominal GDP observations in {ranking_year}", "open", "gdp_annual").show()
+disclose(fig, "gdp-latest-ranking", f"5. Largest nominal GDP observations in {ranking_year}", "gdp_annual").show()
 """,
         ),
         markdown(
-            "synthetic-heading",
+            "arima-heading",
             """
-## Synthetic demonstration figures
+## ARIMA backtest
 
-The remaining figures demonstrate chart behavior and the canonical table contract. Do not interpret their values as historical, market, budget, credit, or survey observations.
+`p` and `q` run from 0 to 2 with one difference. Each candidate is scored with expanding one-step forecasts from 2013 through the latest World GDP year, then compared with last year's value.
+
+A ten-year projection is published only if the selected ARIMA MAPE is strictly below that baseline. The model uses log nominal GDP. It does not include inflation, policy, or crises.
 """,
         ),
         code(
             "chart-06",
             """
-inbound_categories = bundle.arms_by_category_annual.loc[lambda frame: frame["direction"] == "inbound"]
-fig = px.area(inbound_categories, x="year", y="activity_value", color="category", groupnorm="percent", labels={"activity_value": "Share (%)", "category": "Illustrative category", "year": "Year"})
-disclose(fig, "transfer-inbound-composition", "6. Illustrative inbound transfer activity composition", "synthetic", "arms_by_category_annual").show()
+backtest_frame = pd.DataFrame(
+    {
+        "year": list(backtest.years),
+        "Observed": list(backtest.observed),
+        f"ARIMA{backtest.order}": list(backtest.arima_one_step),
+        "Previous-year baseline": list(backtest.naive_one_step),
+    }
+)
+fig = go.Figure()
+fig.add_trace(go.Scatter(x=backtest_frame["year"], y=backtest_frame["Observed"], mode="lines+markers", name="Observed"))
+fig.add_trace(
+    go.Scatter(
+        x=backtest_frame["year"],
+        y=backtest_frame[f"ARIMA{backtest.order}"],
+        mode="lines+markers",
+        name=f"ARIMA{backtest.order}",
+        line={"dash": "dash"},
+    )
+)
+fig.add_trace(
+    go.Scatter(
+        x=backtest_frame["year"],
+        y=backtest_frame["Previous-year baseline"],
+        mode="lines+markers",
+        name="Previous-year baseline",
+        line={"dash": "dot"},
+    )
+)
+disclose(fig, "gdp-arima-backtest", "6. Nominal World GDP expanding one-step backtest", "gdp_annual")
+fig.update_layout(xaxis_title="Year", yaxis_title="Nominal GDP, current US$")
+fig.show()
+print(
+    f"Selected ARIMA{backtest.order}: {backtest.arima_mape:.3f}% MAPE; "
+    f"naive baseline: {backtest.naive_mape:.3f}% MAPE."
+)
+print(projection_decision_text(backtest))
 """,
         ),
-        code(
-            "chart-07",
+        markdown(
+            "conclusion",
             """
-outbound_categories = bundle.arms_by_category_annual.loc[lambda frame: frame["direction"] == "outbound"]
-fig = px.line(outbound_categories, x="year", y="activity_value", color="category", labels={"activity_value": "Fictional activity index", "category": "Illustrative category", "year": "Year"})
-disclose(fig, "transfer-outbound-categories", "7. Illustrative outbound transfer activity", "synthetic", "arms_by_category_annual").show()
-""",
-        ),
-        code(
-            "chart-08",
-            """
-entities = bundle.arms_by_entity_annual
-scenario_map = entities.loc[(entities["direction"] == "inbound") & (entities["mapping_status"] == "mapped")]
-fig = px.choropleth(scenario_map, locations="country_code", color="activity_value", hover_name="source_entity", animation_frame="year", color_continuous_scale="Oranges", labels={"activity_value": "Fictional activity index", "year": "Year"})
-disclose(fig, "transfer-geographic-scenarios", "8. Geographic transfer scenarios over time", "synthetic", "arms_by_entity_annual").show()
-""",
-        ),
-        code(
-            "chart-09",
-            """
-scenario_lines = entities.loc[(entities["direction"] == "outbound") & (entities["mapping_status"] == "mapped")]
-fig = px.line(scenario_lines, x="year", y="activity_value", color="source_entity", labels={"activity_value": "Fictional activity index", "source_entity": "Geographic scenario", "year": "Year"})
-disclose(fig, "transfer-entity-scenarios", "9. Illustrative outbound geographic scenarios", "synthetic", "arms_by_entity_annual").show()
-""",
-        ),
-        code(
-            "chart-10",
-            """
-fig = px.bar(bundle.aircraft_orders_monthly, x="date", y="net_orders", color="manufacturer", barmode="group", labels={"net_orders": "Fictional net orders", "manufacturer": "Manufacturer", "date": "Month"})
-disclose(fig, "aircraft-orders", "10. Monthly net aircraft orders", "synthetic", "aircraft_orders_monthly").show()
-""",
-        ),
-        code(
-            "chart-11",
-            """
-fig = px.area(bundle.defense_budget_annual, x="request_year", y="nominal_usd_bn", color="category", labels={"nominal_usd_bn": "Fictional nominal US$ billions", "category": "Illustrative category", "request_year": "Request year"})
-disclose(fig, "defense-budget-categories", "11. Illustrative budget categories", "synthetic", "defense_budget_annual").show()
-""",
-        ),
-        code(
-            "chart-12",
-            """
-fig = px.bar(bundle.cyber_fund_flows_monthly, x="date", y="net_flow_usd_m", color="fund", barmode="group", labels={"net_flow_usd_m": "Fictional net flow (US$ millions)", "fund": "Fund", "date": "Month"})
-disclose(fig, "cyber-fund-flows", "12. Monthly cybersecurity fund flows", "synthetic", "cyber_fund_flows_monthly").show()
-""",
-        ),
-        code(
-            "chart-13",
-            """
-fig = px.line(bundle.airline_cds_monthly, x="date", y="spread_bps", color="region", labels={"spread_bps": "Fictional spread (basis points)", "region": "Region", "date": "Month"})
-disclose(fig, "airline-credit-spreads", "13. Regional airline credit spread scenarios", "synthetic", "airline_cds_monthly").show()
-""",
-        ),
-        code(
-            "chart-14",
-            """
-fig = px.line(bundle.homebuilder_confidence_annual, x="year", y="index_value", markers=True, labels={"index_value": "Fictional confidence index", "year": "Year"})
-disclose(fig, "homebuilder-confidence", "14. Year-end homebuilder confidence scenario", "synthetic", "homebuilder_confidence_annual").show()
+## Conclusion
+
+Current-dollar GDP mixes real output, inflation, and exchange rates. The selected ARIMA specification does not beat last year's value, so this notebook does not publish a ten-year GDP projection.
+
+Event-impact claims need a causal design and real GDP. Country maps and rankings exclude World Bank aggregates.
 """,
         ),
     ]

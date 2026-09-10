@@ -11,7 +11,7 @@ OUTPUT_DIR = ROOT / "docs" / "previews"
 PREVIEWS = {
     "gdp-world-trend": "world-gdp-trend.png",
     "gdp-selected-trajectories": "selected-gdp-trajectories.png",
-    "aircraft-orders": "synthetic-aircraft-orders.png",
+    "gdp-arima-backtest": "gdp-arima-backtest.png",
 }
 
 
