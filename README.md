@@ -2,18 +2,18 @@
 
 [![Verify](https://github.com/freechie/global-economic-impact-analysis/actions/workflows/verify.yml/badge.svg)](https://github.com/freechie/global-economic-impact-analysis/actions/workflows/verify.yml)
 
-World nominal GDP rose from $1.37 trillion in 1960 to $118.35 trillion in 2025, an 86.5× increase. The sharpest current-dollar year-over-year declines are 2015 at -5.5%, 2009 at -5.2%, and 2020 at -2.7%.
+World nominal GDP rose from $1.37 trillion in 1960 to $118.35 trillion in 2025, an 86.5× increase. That total is the world's output converted into US dollars, so a strong dollar can shrink the number even when economies keep growing. The sharpest year-to-year drops are 2015 at -5.5%, 2009 at -5.2%, and 2020 at -2.7%.
 
 2009: current -5.2%, constant 2015 -1.3%.
 2015: current -5.5%, constant 2015 3.1%.
 2020: current -2.7%, constant 2015 -2.9%.
-2015 is a dollar year. 2009 and 2020 are real contractions.
+Current dollars mix output, inflation, and exchange rates. Constant 2015 dollars hold prices still. 2015 is a dollar year: the dollar strengthened, so the world total fell in dollars while real output grew 3.1%. 2009 and 2020 are real contractions: output itself fell.
 
-China was 6.1% of U.S. GDP in 1990 and 63.4% in 2025. China passed Japan in 2010.
+China was 6.1% of U.S. GDP in 1990 and 63.4% in 2025. In dollar terms China went from a small share of the US economy to nearly two-thirds as large. China passed Japan in 2010.
 
-An expanding one-step ARIMA(1, 1, 1) backtest on log World GDP for 2013 to 2025 recorded 3.804% MAPE. The previous-year baseline recorded 4.574% MAPE. ARIMA beat the naive baseline. A ten-year projection is published. The 2035 median is $172.50 trillion. Observed 2025 GDP was $118.35 trillion. The 95% interval is wide.
+Guessing that next year's world GDP equals this year's was off by 4.574% on average from 2013 to 2025. An ARIMA(1, 1, 1) model that updates each year was off by 3.804%. ARIMA beat that guess, so a ten-year projection is published. The middle estimate for 2035 is $172.50 trillion, from $118.35 trillion in 2025. The 95% range around that path is wide.
 
-The notebook has six Plotly charts. They use World Bank GDP in current US dollars and constant 2015 US dollars, license CC BY 4.0. [Open the executed notebook on GitHub](Global%20Economic%20Impact%20Analysis.ipynb) without installing Python.
+The notebook has six interactive charts from World Bank GDP in current US dollars and 2015 dollars, license CC BY 4.0. [Open the executed notebook on GitHub](Global%20Economic%20Impact%20Analysis.ipynb) without installing Python.
 
 ## Preview
 
