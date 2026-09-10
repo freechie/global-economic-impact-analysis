@@ -118,18 +118,6 @@ def latest_gdp_ranking(gdp_annual: pd.DataFrame, *, limit: int = 15) -> pd.DataF
     )
 
 
-def transfer_mapping_coverage(arms_by_entity_annual: pd.DataFrame) -> float:
-    """Return the activity-weighted share with a geographic scenario mapping."""
-
-    total = arms_by_entity_annual["activity_value"].sum()
-    if total == 0:
-        return 0.0
-    mapped = arms_by_entity_annual.loc[
-        arms_by_entity_annual["mapping_status"] == "mapped", "activity_value"
-    ].sum()
-    return float(mapped / total)
-
-
 @dataclass(frozen=True)
 class ExpandingArimaBacktest:
     order: tuple[int, int, int]

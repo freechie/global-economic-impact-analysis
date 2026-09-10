@@ -13,8 +13,6 @@ import pandas as pd
 
 SCHEMA_VERSION = "1.0"
 PUBLIC_PROFILE_ID = "public-demo"
-PUBLIC_OPEN_TABLES = frozenset({"gdp_annual", "gdp_real_annual"})
-SYNTHETIC_DISCLOSURE = "Synthetic demonstration data. Values are fictional and are not observed measurements."
 
 
 class DataLoadError(RuntimeError):
@@ -28,8 +26,6 @@ class DatasetSpec:
     string_columns: tuple[str, ...] = ()
     integer_columns: tuple[str, ...] = ()
     numeric_columns: tuple[str, ...] = ()
-    date_columns: tuple[str, ...] = ()
-    nullable_columns: tuple[str, ...] = ()
     nonnegative_columns: tuple[str, ...] = ()
     unique_key: tuple[str, ...] = ()
 
@@ -54,82 +50,6 @@ DATASET_SPECS: Mapping[str, DatasetSpec] = MappingProxyType(
             nonnegative_columns=("real_gdp_2015_usd",),
             unique_key=("country_code", "year"),
         ),
-        "arms_by_category_annual": DatasetSpec(
-            "arms_by_category_annual.csv",
-            ("direction", "category", "year", "activity_value"),
-            string_columns=("direction", "category"),
-            integer_columns=("year",),
-            numeric_columns=("activity_value",),
-            nonnegative_columns=("activity_value",),
-            unique_key=("direction", "category", "year"),
-        ),
-        "arms_by_entity_annual": DatasetSpec(
-            "arms_by_entity_annual.csv",
-            (
-                "direction",
-                "source_entity",
-                "country_name",
-                "country_code",
-                "mapping_status",
-                "exclusion_reason",
-                "year",
-                "activity_value",
-            ),
-            string_columns=(
-                "direction",
-                "source_entity",
-                "country_name",
-                "country_code",
-                "mapping_status",
-                "exclusion_reason",
-            ),
-            integer_columns=("year",),
-            numeric_columns=("activity_value",),
-            nullable_columns=("country_name", "country_code", "exclusion_reason"),
-            nonnegative_columns=("activity_value",),
-            unique_key=("direction", "source_entity", "year"),
-        ),
-        "aircraft_orders_monthly": DatasetSpec(
-            "aircraft_orders_monthly.csv",
-            ("date", "manufacturer", "net_orders"),
-            string_columns=("manufacturer",),
-            integer_columns=("net_orders",),
-            date_columns=("date",),
-            unique_key=("date", "manufacturer"),
-        ),
-        "defense_budget_annual": DatasetSpec(
-            "defense_budget_annual.csv",
-            ("request_year", "category", "nominal_usd_bn"),
-            string_columns=("category",),
-            integer_columns=("request_year",),
-            numeric_columns=("nominal_usd_bn",),
-            nonnegative_columns=("nominal_usd_bn",),
-            unique_key=("request_year", "category"),
-        ),
-        "cyber_fund_flows_monthly": DatasetSpec(
-            "cyber_fund_flows_monthly.csv",
-            ("date", "fund", "net_flow_usd_m"),
-            string_columns=("fund",),
-            numeric_columns=("net_flow_usd_m",),
-            date_columns=("date",),
-            unique_key=("date", "fund"),
-        ),
-        "airline_cds_monthly": DatasetSpec(
-            "airline_cds_monthly.csv",
-            ("date", "region", "spread_bps"),
-            string_columns=("region",),
-            numeric_columns=("spread_bps",),
-            date_columns=("date",),
-            nonnegative_columns=("spread_bps",),
-            unique_key=("date", "region"),
-        ),
-        "homebuilder_confidence_annual": DatasetSpec(
-            "homebuilder_confidence_annual.csv",
-            ("year", "index_value"),
-            integer_columns=("year",),
-            numeric_columns=("index_value",),
-            unique_key=("year",),
-        ),
     }
 )
 
@@ -151,13 +71,6 @@ class AnalysisBundle:
     profile: AnalysisProfile
     gdp_annual: pd.DataFrame
     gdp_real_annual: pd.DataFrame
-    arms_by_category_annual: pd.DataFrame
-    arms_by_entity_annual: pd.DataFrame
-    aircraft_orders_monthly: pd.DataFrame
-    defense_budget_annual: pd.DataFrame
-    cyber_fund_flows_monthly: pd.DataFrame
-    airline_cds_monthly: pd.DataFrame
-    homebuilder_confidence_annual: pd.DataFrame
 
     def table(self, table_name: str) -> pd.DataFrame:
         if table_name not in DATASET_SPECS:
@@ -221,49 +134,29 @@ def _validate_manifest(raw: object) -> tuple[dict[str, object], list[str]]:
             problems.append(
                 f"profile.json: {table_name} filename must be {DATASET_SPECS[table_name].filename!r}"
             )
-        if entry.get("classification") not in {"open", "synthetic", "licensed"}:
-            problems.append(
-                f"profile.json: {table_name} classification must be open, synthetic, or licensed"
-            )
+        if entry.get("classification") != "open":
+            problems.append(f"profile.json: {table_name} classification must be open")
         sha256 = entry.get("sha256")
         if not isinstance(sha256, str) or re.fullmatch(r"[0-9a-f]{64}", sha256) is None:
             problems.append(
                 f"profile.json: {table_name} sha256 must be lowercase hexadecimal"
             )
-        provenance_key = (
-            "generator" if entry.get("classification") == "synthetic" else "source"
-        )
-        provenance = entry.get(provenance_key)
+        provenance = entry.get("source")
         if not isinstance(provenance, dict) or not provenance:
-            problems.append(
-                f"profile.json: {table_name} requires {provenance_key} metadata"
-            )
-        if profile_id == PUBLIC_PROFILE_ID:
-            expected_classification = (
-                "open" if table_name in PUBLIC_OPEN_TABLES else "synthetic"
-            )
-            if entry.get("classification") != expected_classification:
+            problems.append(f"profile.json: {table_name} requires source metadata")
+        if profile_id == PUBLIC_PROFILE_ID and isinstance(provenance, dict):
+            if provenance.get("license") != "CC BY 4.0" or "World Bank" not in str(
+                provenance.get("name", "")
+            ):
                 problems.append(
-                    f"profile.json: public-demo {table_name} must be {expected_classification}"
+                    f"profile.json: public-demo {table_name} requires World Bank and CC BY 4.0 attribution"
                 )
-            if table_name in PUBLIC_OPEN_TABLES and isinstance(provenance, dict):
-                if provenance.get("license") != "CC BY 4.0" or "World Bank" not in str(
-                    provenance.get("name", "")
-                ):
-                    problems.append(
-                        f"profile.json: public-demo {table_name} requires World Bank and CC BY 4.0 attribution"
-                    )
-            if table_name not in PUBLIC_OPEN_TABLES and isinstance(provenance, dict):
-                if provenance.get("disclosure") != SYNTHETIC_DISCLOSURE:
-                    problems.append(
-                        f"profile.json: public-demo {table_name} requires the synthetic disclosure"
-                    )
 
     return raw, problems
 
 
 def _validate_table(
-    table_name: str, frame: pd.DataFrame, spec: DatasetSpec
+    frame: pd.DataFrame, spec: DatasetSpec
 ) -> tuple[pd.DataFrame, list[str]]:
     problems: list[str] = []
     expected = list(spec.columns)
@@ -275,10 +168,7 @@ def _validate_table(
     parsed = frame.copy()
     for column in spec.string_columns:
         parsed[column] = parsed[column].astype("string")
-        if (
-            column not in spec.nullable_columns
-            and (parsed[column].isna() | (parsed[column].str.strip() == "")).any()
-        ):
+        if (parsed[column].isna() | (parsed[column].str.strip() == "")).any():
             problems.append(f"{spec.filename}: {column} contains blank values")
 
     for column in spec.integer_columns:
@@ -295,13 +185,6 @@ def _validate_table(
         else:
             parsed[column] = numeric.astype("float64")
 
-    for column in spec.date_columns:
-        dates = pd.to_datetime(parsed[column], format="%Y-%m-%d", errors="coerce")
-        if dates.isna().any():
-            problems.append(f"{spec.filename}: {column} must use YYYY-MM-DD dates")
-        else:
-            parsed[column] = dates
-
     for column in spec.nonnegative_columns:
         if (
             column in parsed
@@ -316,26 +199,6 @@ def _validate_table(
             problems.append(f"{spec.filename}: is_aggregate must contain true or false")
         else:
             parsed["is_aggregate"] = aggregate_flags.map({"true": True, "false": False})
-
-    if table_name in {"arms_by_category_annual", "arms_by_entity_annual"}:
-        directions = set(parsed["direction"].dropna())
-        if not directions.issubset({"inbound", "outbound"}):
-            problems.append(f"{spec.filename}: direction must be inbound or outbound")
-
-    if table_name == "arms_by_entity_annual":
-        statuses = set(parsed["mapping_status"].dropna())
-        if not statuses.issubset({"mapped", "excluded"}):
-            problems.append(
-                f"{spec.filename}: mapping_status must be mapped or excluded"
-            )
-        mapped = parsed["mapping_status"].eq("mapped")
-        excluded = parsed["mapping_status"].eq("excluded")
-        if parsed.loc[mapped, ["country_name", "country_code"]].isna().any().any():
-            problems.append(
-                f"{spec.filename}: mapped rows require country_name and country_code"
-            )
-        if parsed.loc[excluded, "exclusion_reason"].isna().any():
-            problems.append(f"{spec.filename}: excluded rows require exclusion_reason")
 
     if spec.unique_key and parsed.duplicated(list(spec.unique_key)).any():
         problems.append(
@@ -377,7 +240,7 @@ def load_analysis_bundle(data_dir: str | Path | None = None) -> AnalysisBundle:
         except Exception as exc:
             problems.append(f"{spec.filename}: could not be read ({exc})")
             continue
-        parsed, table_problems = _validate_table(table_name, frame, spec)
+        parsed, table_problems = _validate_table(frame, spec)
         problems.extend(table_problems)
         if not table_problems:
             loaded[table_name] = parsed

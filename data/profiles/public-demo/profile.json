@@ -1,65 +1,5 @@
 {
   "datasets": {
-    "aircraft_orders_monthly": {
-      "classification": "synthetic",
-      "filename": "aircraft_orders_monthly.csv",
-      "generator": {
-        "disclosure": "Synthetic demonstration data. Values are fictional and are not observed measurements.",
-        "formula_version": "1",
-        "script": "scripts/generate_public_profile.py"
-      },
-      "sha256": "de66e61ed928977600dca61ac60807a62f916bb7b27c9fea324c30e5f81b76c7"
-    },
-    "airline_cds_monthly": {
-      "classification": "synthetic",
-      "filename": "airline_cds_monthly.csv",
-      "generator": {
-        "disclosure": "Synthetic demonstration data. Values are fictional and are not observed measurements.",
-        "formula_version": "1",
-        "script": "scripts/generate_public_profile.py"
-      },
-      "sha256": "96c2fe833ef11e823c5ca003de2692ec1bb461d1b979a05ee7bb0df0a638be30"
-    },
-    "arms_by_category_annual": {
-      "classification": "synthetic",
-      "filename": "arms_by_category_annual.csv",
-      "generator": {
-        "disclosure": "Synthetic demonstration data. Values are fictional and are not observed measurements.",
-        "formula_version": "1",
-        "script": "scripts/generate_public_profile.py"
-      },
-      "sha256": "8b401eadf34e9881d6a12301cee8b71b5fcae1c07788fd8053b9a2a97cb98c75"
-    },
-    "arms_by_entity_annual": {
-      "classification": "synthetic",
-      "filename": "arms_by_entity_annual.csv",
-      "generator": {
-        "disclosure": "Synthetic demonstration data. Values are fictional and are not observed measurements.",
-        "formula_version": "1",
-        "script": "scripts/generate_public_profile.py"
-      },
-      "sha256": "c5e5c4532b738a469a55b04abd7e37fa60614e540df2cdf2c011a45637574dde"
-    },
-    "cyber_fund_flows_monthly": {
-      "classification": "synthetic",
-      "filename": "cyber_fund_flows_monthly.csv",
-      "generator": {
-        "disclosure": "Synthetic demonstration data. Values are fictional and are not observed measurements.",
-        "formula_version": "1",
-        "script": "scripts/generate_public_profile.py"
-      },
-      "sha256": "ab6752d6e2492203fa16bf0331c7d670e824ced10b0a5ee3a600c770bffa726d"
-    },
-    "defense_budget_annual": {
-      "classification": "synthetic",
-      "filename": "defense_budget_annual.csv",
-      "generator": {
-        "disclosure": "Synthetic demonstration data. Values are fictional and are not observed measurements.",
-        "formula_version": "1",
-        "script": "scripts/generate_public_profile.py"
-      },
-      "sha256": "469a15e0a2d75d363023630ba4541cf1fc0213fc71089bc2ec872fe855abd1c0"
-    },
     "gdp_annual": {
       "classification": "open",
       "filename": "gdp_annual.csv",
@@ -91,19 +31,9 @@
         "series_code": "NY.GDP.MKTP.KD",
         "url": "https://data.worldbank.org/indicator/NY.GDP.MKTP.KD"
       }
-    },
-    "homebuilder_confidence_annual": {
-      "classification": "synthetic",
-      "filename": "homebuilder_confidence_annual.csv",
-      "generator": {
-        "disclosure": "Synthetic demonstration data. Values are fictional and are not observed measurements.",
-        "formula_version": "1",
-        "script": "scripts/generate_public_profile.py"
-      },
-      "sha256": "d5b9923c3cb1de41171866cad9372701014c1c84a5aa01b149083bc308719a18"
     }
   },
-  "description": "Public profile with World Bank open GDP data and deterministic synthetic demonstration tables.",
+  "description": "Public World Bank GDP in current and constant 2015 US dollars.",
   "profile_id": "public-demo",
   "schema_version": "1.0"
 }

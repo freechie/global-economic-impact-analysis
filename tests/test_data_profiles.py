@@ -8,12 +8,7 @@ import shutil
 import pytest
 
 from scripts import generate_public_profile as generator
-from src.data_loader import (
-    DATASET_SPECS,
-    PUBLIC_OPEN_TABLES,
-    DataLoadError,
-    load_analysis_bundle,
-)
+from src.data_loader import DATASET_SPECS, DataLoadError, load_analysis_bundle
 
 ROOT = Path(__file__).resolve().parents[1]
 PUBLIC_PROFILE = ROOT / "data" / "profiles" / "public-demo"
@@ -53,18 +48,34 @@ def test_manifest_hashes_and_provenance_match_public_files():
     for table_name, entry in manifest["datasets"].items():
         path = PUBLIC_PROFILE / entry["filename"]
         assert hashlib.sha256(path.read_bytes()).hexdigest() == entry["sha256"]
-        if table_name in PUBLIC_OPEN_TABLES:
-            assert entry["classification"] == "open"
-            assert entry["source"]["license"] == "CC BY 4.0"
-            assert "World Bank" in entry["source"]["name"]
-            assert "Normalized" in entry["source"]["changes"]
-            assert (
-                entry["source"]["coverage"]["start_year"]
-                <= entry["source"]["coverage"]["end_year"]
-            )
-        else:
-            assert entry["classification"] == "synthetic"
-            assert "fictional" in entry["generator"]["disclosure"].lower()
+        assert entry["classification"] == "open"
+        assert entry["source"]["license"] == "CC BY 4.0"
+        assert "World Bank" in entry["source"]["name"]
+        assert "Normalized" in entry["source"]["changes"]
+        assert (
+            entry["source"]["coverage"]["start_year"]
+            <= entry["source"]["coverage"]["end_year"]
+        )
+
+
+def test_generator_deletes_unused_profile_files(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    output = tmp_path / "public-demo"
+    monkeypatch.setattr(generator, "OUTPUT_DIR", output)
+    output.mkdir()
+    leftover = output / "aircraft_orders_monthly.csv"
+    leftover.write_text("junk\n")
+
+    generator.generate(
+        PUBLIC_PROFILE / "gdp_annual.csv",
+        PUBLIC_PROFILE / "gdp_real_annual.csv",
+    )
+
+    assert not leftover.exists()
+    assert (output / "gdp_annual.csv").is_file()
+    assert (output / "gdp_real_annual.csv").is_file()
+    assert (output / "profile.json").is_file()
 
 
 def test_loader_returns_all_canonical_tables_with_exact_columns():
@@ -81,15 +92,15 @@ def test_loader_aggregates_directory_errors_and_returns_no_partial_bundle(
 ):
     profile = tmp_path / "broken-profile"
     shutil.copytree(PUBLIC_PROFILE, profile)
-    (profile / "aircraft_orders_monthly.csv").write_text("wrong\n1\n")
-    (profile / "airline_cds_monthly.csv").unlink()
+    (profile / "gdp_annual.csv").write_text("wrong\n1\n")
+    (profile / "gdp_real_annual.csv").unlink()
 
     with pytest.raises(DataLoadError) as exc_info:
         load_analysis_bundle(profile)
 
     message = str(exc_info.value)
-    assert "aircraft_orders_monthly.csv" in message
-    assert "airline_cds_monthly.csv" in message
+    assert "gdp_annual.csv" in message
+    assert "gdp_real_annual.csv" in message
     assert "SHA-256" in message
     assert "file is missing" in message
 

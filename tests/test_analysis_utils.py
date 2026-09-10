@@ -19,7 +19,6 @@ from src.analysis_utils import (
     nominal_vs_real_changes,
     projection_decision_text,
     select_arima_candidate,
-    transfer_mapping_coverage,
     world_gdp_series,
 )
 from src.data_loader import load_analysis_bundle
@@ -75,18 +74,6 @@ def test_latest_gdp_ranking_uses_latest_year_and_excludes_aggregates():
     assert ranking[["country_name", "year"]].to_dict("records") == [
         {"country_name": "B", "year": 2022}
     ]
-
-
-def test_transfer_mapping_coverage_uses_activity_weights():
-    frame = pd.DataFrame(
-        {
-            "mapping_status": ["mapped", "excluded"],
-            "activity_value": [75.0, 25.0],
-        }
-    )
-
-    assert transfer_mapping_coverage(frame) == pytest.approx(0.75)
-    assert transfer_mapping_coverage(frame.assign(activity_value=0.0)) == 0.0
 
 
 def _backtest(

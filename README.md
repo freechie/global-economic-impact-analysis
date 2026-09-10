@@ -4,11 +4,11 @@
 
 World nominal GDP rose from $1.37 trillion in 1960 to $118.35 trillion in 2025, an 86.5× increase. That total is the world's output converted into US dollars, so a strong dollar can shrink the number even when economies keep growing. The sharpest year-to-year drops are 2015 at -5.5%, 2009 at -5.2%, and 2020 at -2.7%.
 
-2009: current -5.2%, constant 2015 -1.3%.
+2009: current -5.2%, constant 2015 -1.3%
 
-2015: current -5.5%, constant 2015 3.1%.
+2015: current -5.5%, constant 2015 3.1%
 
-2020: current -2.7%, constant 2015 -2.9%.
+2020: current -2.7%, constant 2015 -2.9%
 
 Current dollars mix output, inflation, and exchange rates. Constant 2015 dollars hold prices still. 2015 is a dollar year: the dollar strengthened, so the world total fell in dollars while real output grew 3.1%. 2009 and 2020 are real contractions: output itself fell.
 
@@ -95,7 +95,7 @@ The lockfile does not include Jupyter.
 
 `load_analysis_bundle()` reads `data/profiles/public-demo` unless you set `GEIA_DATA_DIR`.
 
-The public profile has two World Bank GDP tables and seven unused synthetic CSVs. The loader requires all nine tables. Put a licensed local profile in `data/local/` and include `gdp_real_annual.csv`. Git ignores `data/local/`, `data/raw/`, and `data/processed/`. If the chosen directory fails checks, the loader reports the errors. It does not fall back to `public-demo`.
+The public profile is two World Bank GDP tables. Set `GEIA_DATA_DIR` to load another complete two-table profile. Git ignores `data/local/`, `data/raw/`, and `data/processed/`. If the chosen directory fails checks, the loader reports the errors. It does not fall back to `public-demo`.
 
 See [`data/README.md`](data/README.md) for the table contract.
 
