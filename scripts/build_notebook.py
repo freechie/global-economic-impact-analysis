@@ -83,12 +83,13 @@ OPEN_DISCLOSURES = {
     "gdp_real_annual": "World Bank Open Data, GDP (constant 2015 US$). License: CC BY 4.0.",
 }
 
-def disclose(fig, chart_id, title, table_name, disclosure=None):
+def disclose(fig, chart_id, title, table_name, disclosure=None, *, hovermode="x unified", year_axis="x"):
     provenance = disclosure or OPEN_DISCLOSURES[table_name]
     fig.update_layout(
         title={"text": f"{title}<br><sup>{provenance}</sup>"},
         template="plotly_white",
         autosize=True,
+        hovermode=hovermode,
         meta={
             "chart_id": chart_id,
             "classification": "open",
@@ -97,10 +98,51 @@ def disclose(fig, chart_id, title, table_name, disclosure=None):
             "profile_id": bundle.profile.profile_id,
         },
     )
+    if year_axis == "x":
+        fig.update_xaxes(hoverformat=".0f")
     return fig
 
 def trillions(value):
     return f"${value / 1e12:.2f} trillion"
+
+def trillion_hover(fig, *, value_axis="y"):
+    for trace in fig.data:
+        if getattr(trace, "hoverinfo", None) == "skip":
+            continue
+        values = trace.y if value_axis == "y" else trace.x
+        if values is None:
+            continue
+        trace.customdata = [[float(value) / 1e12] for value in values]
+        name = f"{trace.name}<br>" if trace.name else ""
+        if value_axis == "y":
+            trace.hovertemplate = (
+                f"{name}Year=%{{x}}<br>$%{{customdata[0]:.2f}} trillion<extra></extra>"
+            )
+        else:
+            trace.hovertemplate = "%{y}<br>$%{customdata[0]:.2f} trillion<extra></extra>"
+    return fig
+
+def percent_hover(fig):
+    for trace in fig.data:
+        name = f"{trace.name}<br>" if trace.name else ""
+        trace.hovertemplate = f"{name}Year=%{{x}}<br>%{{y:.1f}}%<extra></extra>"
+    return fig
+
+def claim_box(fig, lines):
+    fig.add_annotation(
+        xref="paper",
+        yref="paper",
+        x=0.01,
+        y=0.99,
+        xanchor="left",
+        yanchor="top",
+        text="<br>".join(lines),
+        showarrow=False,
+        align="left",
+        bgcolor="rgba(255,255,255,0.9)",
+        bordercolor="#ccc",
+    )
+    return fig
 """,
         ),
         markdown("findings-heading", "## Findings"),
@@ -143,6 +185,16 @@ world = bundle.gdp_annual.loc[bundle.gdp_annual["country_code"] == "WLD"]
 fig = px.line(world, x="year", y="nominal_gdp_usd", labels={"nominal_gdp_usd": "Current US$", "year": "Year"})
 for year, label in ((2009, "2009"), (2015, "2015 FX"), (2020, "2020")):
     fig.add_vline(x=year, line_dash="dot", annotation_text=label, annotation_position="top")
+fx = next(check for check in output_checks if check.year == 2015)
+fig.add_annotation(
+    x=2015,
+    y=float(world.loc[world["year"] == 2015, "nominal_gdp_usd"].iloc[0]),
+    text=f"current {fx.nominal_change_pct:.1f}%, real {fx.real_change_pct:.1f}%",
+    showarrow=True,
+    ax=80,
+    ay=-40,
+)
+trillion_hover(fig)
 disclose(fig, "gdp-world-trend", "1. World nominal GDP over time", "gdp_annual").show()
 """,
         ),
@@ -173,8 +225,20 @@ fig = px.line(
     color="series",
     labels={"annual_change_pct": "Annual change (%)", "series": "Series", "year": "Year"},
 )
+fig.add_hline(y=0, line_color="#666", line_width=1)
 for year, label in ((2009, "2009"), (2015, "2015 FX"), (2020, "2020")):
     fig.add_vline(x=year, line_dash="dot", annotation_text=label, annotation_position="top")
+claim_box(
+    fig,
+    [
+        (
+            f"{check.year}{' FX' if check.year == 2015 else ''}: "
+            f"current {check.nominal_change_pct:.1f}%, real {check.real_change_pct:.1f}%"
+        )
+        for check in output_checks
+    ],
+)
+percent_hover(fig)
 disclose(
     fig,
     "gdp-nominal-vs-real",
@@ -209,6 +273,13 @@ fig = px.line(
     labels={"nominal_gdp_usd": "Current US$", "country_name": "Country", "year": "Year"},
 )
 fig.update_yaxes(type="log")
+fig.add_vline(
+    x=story.china_passes_japan_year,
+    line_dash="dot",
+    annotation_text="China passes Japan",
+    annotation_position="top",
+)
+trillion_hover(fig)
 disclose(fig, "gdp-selected-trajectories", "3. Selected nominal GDP trajectories, log scale", "gdp_annual").show()
 """,
         ),
@@ -224,7 +295,21 @@ Log scale keeps early China and India visible. A linear axis hides them behind t
 ranking = latest_gdp_ranking(bundle.gdp_annual, limit=15)
 ranking_year = int(ranking["year"].iloc[0])
 fig = px.bar(ranking, x="nominal_gdp_usd", y="country_name", orientation="h", labels={"nominal_gdp_usd": "Current US$", "country_name": "Country"})
-disclose(fig, "gdp-latest-ranking", f"4. Largest nominal GDP observations in {ranking_year}", "gdp_annual").show()
+fig.update_traces(
+    text=[f"${value / 1e12:.1f}T" for value in ranking["nominal_gdp_usd"]],
+    textposition="outside",
+    cliponaxis=False,
+)
+fig.update_layout(margin={"r": 80})
+trillion_hover(fig, value_axis="x")
+disclose(
+    fig,
+    "gdp-latest-ranking",
+    f"4. Largest nominal GDP observations in {ranking_year}",
+    "gdp_annual",
+    hovermode="closest",
+    year_axis=None,
+).show()
 print(
     f"Largest {ranking_year} current-dollar GDP: "
     + ", ".join(ranking.sort_values("nominal_gdp_usd", ascending=False)["country_name"].head(5))
@@ -281,6 +366,13 @@ fig.add_trace(
 )
 disclose(fig, "gdp-arima-backtest", "5. Nominal World GDP expanding one-step backtest", "gdp_annual")
 fig.update_layout(xaxis_title="Year", yaxis_title="Nominal GDP, current US$")
+claim_box(
+    fig,
+    [
+        f"ARIMA MAPE {backtest.arima_mape:.3f}%. Previous-year {backtest.naive_mape:.3f}%."
+    ],
+)
+trillion_hover(fig)
 fig.show()
 print(
     f"Selected ARIMA{backtest.order}: {backtest.arima_mape:.3f}% MAPE; "
@@ -336,6 +428,22 @@ else:
     )
     disclose(fig, "gdp-arima-projection", "6. Ten-year World GDP projection", "gdp_annual")
     fig.update_layout(xaxis_title="Year", yaxis_title="Nominal GDP, current US$")
+    fig.add_annotation(
+        x=projection.years[-1],
+        y=projection.median[-1],
+        text=f"{projection.years[-1]} median {projection.median[-1] / 1e12:.2f} trillion",
+        showarrow=True,
+        ax=-80,
+        ay=-30,
+    )
+    claim_box(
+        fig,
+        [
+            f"95% interval in {projection.years[-1]}",
+            f"{projection.lower[-1] / 1e12:.2f} to {projection.upper[-1] / 1e12:.2f} trillion",
+        ],
+    )
+    trillion_hover(fig)
     fig.show()
     print(
         f"Median path: {trillions(world_series.loc[projection.origin_year])} in {projection.origin_year} "

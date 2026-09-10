@@ -10,7 +10,13 @@ World nominal GDP rose from $1.37 trillion in 1960 to $118.35 trillion in 2025, 
 
 2020: current -2.7%, constant 2015 -2.9%
 
-Current dollars mix output, inflation, and exchange rates. Constant 2015 dollars hold prices still. 2015 is a dollar year: the dollar strengthened, so the world total fell in dollars while real output grew 3.1%. 2009 and 2020 are real contractions: output itself fell.
+Current dollars are the world's output converted into this year's US dollars. That mix includes real output, inflation, and exchange rates. A stronger dollar makes foreign GDP look smaller in dollars. Constant 2015 dollars hold prices at 2015. A rise means the world produced more. A drop means it produced less.
+
+In current dollars, 2015 is the worst year in the series: World GDP fell 5.5%, more than 2009 or 2020. In constant 2015 dollars, 2015 is +3.1%. Output grew. The current-dollar drop is mostly the dollar, not a collapse in production. The notebook labels that point FX. 2015 is a dollar year, not a recession year: the dollar strengthened, so the world total fell in dollars while real output grew 3.1%.
+
+2009 and 2020 fall in both series. 2009 and 2020 are real contractions: output itself fell.
+
+Use current dollars for how large an economy is in dollars this year, including the ranking. Use constant 2015 dollars for whether the world grew or shrank. If current dollars fall and constant dollars rise, it is a dollar year. If both fall, it is a real contraction.
 
 China was 6.1% of U.S. GDP in 1990 and 63.4% in 2025. In dollar terms China went from a small share of the US economy to nearly two-thirds as large. China passed Japan in 2010.
 
@@ -86,10 +92,8 @@ Open `Global Economic Impact Analysis.ipynb` in Cursor or VS Code and select the
 Open the notebook in a browser:
 
 ```bash
-uv run --with jupyterlab jupyter lab "Global Economic Impact Analysis.ipynb"
+uv run jupyter lab "Global Economic Impact Analysis.ipynb"
 ```
-
-The lockfile does not include Jupyter.
 
 ## Data
 

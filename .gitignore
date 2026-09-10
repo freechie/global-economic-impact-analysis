@@ -44,3 +44,6 @@ data/processed/
 
 !data/profiles/public-demo/
 !data/profiles/public-demo/**
+
+artifacts/verify-gdp-analysis/
+.cursor/
