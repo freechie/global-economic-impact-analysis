@@ -22,6 +22,8 @@ from src.data_loader import load_analysis_bundle
 
 ROOT = Path(__file__).resolve().parents[1]
 NOTEBOOK_PATH = ROOT / "Global Economic Impact Analysis.ipynb"
+ARIMA_README_MEDIAN_ABS = 0.25
+ARIMA_README_INTERVAL_ABS = 2
 OPEN_CHART_IDS = (
     "gdp-world-trend",
     "gdp-nominal-vs-real",
@@ -100,11 +102,24 @@ def _three_decimal_percents(text: str) -> list[float]:
     return [float(match) for match in re.findall(r"(\d+\.\d{3})%", text)]
 
 
+def _trillion_values(text: str) -> list[float]:
+    return [float(match) for match in re.findall(r"\$(\d+(?:\.\d+)?)\s+trillion", text)]
+
+
 def _assert_text_has_mape(text: str, value: float) -> None:
     found = _three_decimal_percents(text)
     assert found, "expected a three-decimal percent MAPE figure"
     assert any(item == pytest.approx(value, abs=ARIMA_MAPE_TIE) for item in found), (
         f"expected MAPE near {value:.3f}% among {found}"
+    )
+
+
+def _assert_text_has_trillions(text: str, usd: float, *, abs_tol: float) -> None:
+    found = _trillion_values(text)
+    target = usd / 1e12
+    assert found, "expected a $N trillion figure"
+    assert any(item == pytest.approx(target, abs=abs_tol) for item in found), (
+        f"expected about ${target:.2f} trillion among {found}"
     )
 
 
@@ -213,16 +228,21 @@ def test_notebook_does_not_plot_synthetic_tables():
     assert "arms_by_category_annual" not in source
 
 
-def test_mape_lock_allows_linux_mac_thousandth_drift():
+def test_arima_readme_locks_allow_linux_mac_solver_drift():
     readme = (
-        "Guessing that next year's world GDP equals this year's was off by "
-        "4.574%. An ARIMA(1, 1, 1) model was off by 3.804%."
+        "An ARIMA(1, 1, 1) model was off by 3.804%. "
+        "The middle estimate for 2035 is $172.50 trillion. "
+        "The 95% interval runs from $75 trillion to $398 trillion."
     )
 
     _assert_text_has_mape(readme, 3.805)
-    _assert_text_has_mape(readme, 4.574)
+    _assert_text_has_trillions(readme, 172.43e12, abs_tol=ARIMA_README_MEDIAN_ABS)
+    _assert_text_has_trillions(readme, 74.4e12, abs_tol=ARIMA_README_INTERVAL_ABS)
+    _assert_text_has_trillions(readme, 397.2e12, abs_tol=ARIMA_README_INTERVAL_ABS)
     with pytest.raises(AssertionError):
         _assert_text_has_mape(readme, 3.700)
+    with pytest.raises(AssertionError):
+        _assert_text_has_trillions(readme, 200e12, abs_tol=ARIMA_README_MEDIAN_ABS)
 
 
 def test_readme_leads_with_computed_gdp_findings():
@@ -260,9 +280,9 @@ def test_readme_leads_with_computed_gdp_findings():
                 f"constant 2015 {checks[year].real_change_pct:.1f}%"
             ) in text
     assert "ten-year projection is published" in readme
-    assert _trillions(projection.median[-1]) in readme
-    assert f"${round(projection.lower[-1] / 1e12)} trillion" in readme
-    assert f"${round(projection.upper[-1] / 1e12)} trillion" in readme
+    _assert_text_has_trillions(readme, projection.median[-1], abs_tol=ARIMA_README_MEDIAN_ABS)
+    _assert_text_has_trillions(readme, projection.lower[-1], abs_tol=ARIMA_README_INTERVAL_ABS)
+    _assert_text_has_trillions(readme, projection.upper[-1], abs_tol=ARIMA_README_INTERVAL_ABS)
     assert top5 in readme
 
 
