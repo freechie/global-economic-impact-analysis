@@ -17,15 +17,29 @@ The notebook has six Plotly charts. They use World Bank GDP in current US dollar
 
 ## Preview
 
-![World nominal GDP over time](docs/previews/world-gdp-trend.png)
+![World nominal GDP in current US dollars, 1960 to 2025](docs/previews/world-gdp-trend.png)
 
-![World GDP annual change, current vs constant 2015 US$](docs/previews/gdp-nominal-vs-real.png)
+Current-dollar World GDP. 2015 is the largest drop and is marked FX.
 
-![Selected nominal GDP trajectories](docs/previews/selected-gdp-trajectories.png)
+![World GDP annual percent change, current US dollars vs constant 2015 dollars](docs/previews/gdp-nominal-vs-real.png)
 
-![World GDP ARIMA backtest](docs/previews/gdp-arima-backtest.png)
+2015: current -5.5%, constant 2015 3.1%. 2009 and 2020 fall in both series.
 
-![World GDP ten-year ARIMA projection](docs/previews/gdp-arima-projection.png)
+![Nominal GDP for the United States, China, Japan, Germany, and India, log scale](docs/previews/selected-gdp-trajectories.png)
+
+China passes Japan in 2010. The 1960 China-above-Japan reading is a current-dollar artifact.
+
+![Largest current-dollar GDP in 2025, countries only](docs/previews/gdp-latest-ranking.png)
+
+United States, China, Germany, Japan, United Kingdom. World Bank aggregates are excluded.
+
+![ARIMA(1, 1, 1) one-step backtest vs last year's World GDP, 2013 to 2025](docs/previews/gdp-arima-backtest.png)
+
+ARIMA MAPE 3.804%. Previous-year baseline 4.574%.
+
+![Ten-year World GDP projection, ARIMA(1, 1, 1) median and 95% interval](docs/previews/gdp-arima-projection.png)
+
+Median $172.50 trillion in 2035. The 95% interval runs from $75 trillion to $398 trillion.
 
 ## Install
 

@@ -12,6 +12,7 @@ PREVIEWS = {
     "gdp-world-trend": "world-gdp-trend.png",
     "gdp-nominal-vs-real": "gdp-nominal-vs-real.png",
     "gdp-selected-trajectories": "selected-gdp-trajectories.png",
+    "gdp-latest-ranking": "gdp-latest-ranking.png",
     "gdp-arima-backtest": "gdp-arima-backtest.png",
     "gdp-arima-projection": "gdp-arima-projection.png",
 }

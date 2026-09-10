@@ -179,6 +179,7 @@ def test_readme_uses_public_paths_and_safe_previews():
     assert preview_references == {
         "docs/previews/gdp-arima-backtest.png",
         "docs/previews/gdp-arima-projection.png",
+        "docs/previews/gdp-latest-ranking.png",
         "docs/previews/gdp-nominal-vs-real.png",
         "docs/previews/selected-gdp-trajectories.png",
         "docs/previews/world-gdp-trend.png",
