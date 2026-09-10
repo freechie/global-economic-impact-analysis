@@ -15,6 +15,7 @@ ARIMA_ORIGIN_YEAR = 2013
 ARIMA_MAX_LAG = 2
 ARIMA_DIFFERENCE = 1
 ARIMA_FORECAST_STEPS = 10
+ARIMA_MAXITER = 1000
 CHINA_JAPAN_CROSSING_AFTER_YEAR = 1980
 CHINA_SHARE_START_YEAR = 1990
 NOMINAL_GDP_COLUMN = "nominal_gdp_usd"
@@ -304,6 +305,12 @@ def _quiet_statsmodels():
         yield
 
 
+def _fit_log_arima(history: list[float], order: tuple[int, int, int]):
+    """Fit log-level ARIMA with the same iteration cap as the published projection."""
+
+    return ARIMA(history, order=order).fit(method_kwargs={"maxiter": ARIMA_MAXITER})
+
+
 def select_arima_candidate(
     candidates: list[tuple[tuple[int, int, int], float, float, tuple[float, ...]]],
 ) -> tuple[tuple[int, int, int], float, float, tuple[float, ...]]:
@@ -319,15 +326,15 @@ def select_arima_candidate(
     return tied[0]
 
 
-def expanding_arima_backtest(
+def expanding_arima_candidates(
     series: pd.Series,
     *,
     origin_year: int = ARIMA_ORIGIN_YEAR,
     max_p: int = ARIMA_MAX_LAG,
     max_q: int = ARIMA_MAX_LAG,
     difference: int = ARIMA_DIFFERENCE,
-) -> ExpandingArimaBacktest:
-    """Score log ARIMA(p,d,q) models with expanding one-step forecasts against a naive lag."""
+) -> list[tuple[tuple[int, int, int], float, float, tuple[float, ...]]]:
+    """Score every log ARIMA(p,d,q) with expanding one-step forecasts."""
 
     ordered = series.sort_index()
     training = ordered.loc[ordered.index < origin_year]
@@ -342,29 +349,44 @@ def expanding_arima_backtest(
             order = (p, difference, q)
             history = list(np.log(training.to_numpy(dtype=float)))
             predictions: list[float] = []
-            converged = True
             for actual in np.log(actual_levels):
                 with _quiet_statsmodels():
-                    fitted = ARIMA(history, order=order).fit()
-                    retvals = getattr(fitted, "mle_retvals", None) or {}
-                    if not retvals.get("converged", True):
-                        converged = False
-                        break
+                    fitted = _fit_log_arima(history, order)
                     predictions.append(float(np.exp(fitted.forecast(1)[0])))
                 history.append(float(actual))
-            if not converged:
-                continue
             predicted = np.array(predictions, dtype=float)
             mape = float(np.mean(np.abs((actual_levels - predicted) / actual_levels)) * 100)
             rmse = float(np.sqrt(np.mean((actual_levels - predicted) ** 2)))
             candidate_results.append((order, mape, rmse, tuple(float(value) for value in predicted)))
+    return candidate_results
 
+
+def expanding_arima_backtest(
+    series: pd.Series,
+    *,
+    origin_year: int = ARIMA_ORIGIN_YEAR,
+    max_p: int = ARIMA_MAX_LAG,
+    max_q: int = ARIMA_MAX_LAG,
+    difference: int = ARIMA_DIFFERENCE,
+) -> ExpandingArimaBacktest:
+    """Score log ARIMA(p,d,q) models with expanding one-step forecasts against a naive lag."""
+
+    ordered = series.sort_index()
+    test = ordered.loc[ordered.index >= origin_year]
+    candidate_results = expanding_arima_candidates(
+        series,
+        origin_year=origin_year,
+        max_p=max_p,
+        max_q=max_q,
+        difference=difference,
+    )
     if not candidate_results:
-        raise ValueError("No ARIMA specification converged")
+        raise ValueError("No ARIMA specification produced forecasts")
 
     order, arima_mape, arima_rmse, arima_one_step = select_arima_candidate(
         candidate_results
     )
+    actual_levels = test.to_numpy(dtype=float)
     naive = ordered.shift(1).loc[test.index].to_numpy(dtype=float)
     naive_mape = float(np.mean(np.abs((actual_levels - naive) / actual_levels)) * 100)
     naive_rmse = float(np.sqrt(np.mean((actual_levels - naive) ** 2)))
@@ -395,7 +417,7 @@ def expanding_arima_projection(
     origin_year = int(ordered.index.max())
     history = list(np.log(ordered.to_numpy(dtype=float)))
     with _quiet_statsmodels():
-        fitted = ARIMA(history, order=order).fit(method_kwargs={"maxiter": 1000})
+        fitted = _fit_log_arima(history, order)
         forecast = fitted.get_forecast(steps=steps)
     median = np.exp(np.asarray(forecast.predicted_mean, dtype=float))
     interval = np.asarray(forecast.conf_int(), dtype=float)

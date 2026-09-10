@@ -6,10 +6,13 @@ import pandas as pd
 import pytest
 
 from src.analysis_utils import (
+    ARIMA_DIFFERENCE,
+    ARIMA_MAX_LAG,
     ExpandingArimaBacktest,
     annual_percent_change,
     country_gdp,
     expanding_arima_backtest,
+    expanding_arima_candidates,
     expanding_arima_projection,
     latest_gdp_ranking,
     nominal_gdp_story,
@@ -246,6 +249,18 @@ def test_arima_selection_keeps_a_clear_mape_winner():
     )
 
     assert selected[0] == (2, 1, 2)
+
+
+def test_expanding_arima_candidates_score_every_lag_combination():
+    series = world_gdp_series(load_analysis_bundle().gdp_annual)
+    candidates = expanding_arima_candidates(series)
+    expected = {
+        (p, ARIMA_DIFFERENCE, q)
+        for p in range(ARIMA_MAX_LAG + 1)
+        for q in range(ARIMA_MAX_LAG + 1)
+    }
+
+    assert {item[0] for item in candidates} == expected
 
 
 def test_public_world_gdp_backtest_beats_naive():
