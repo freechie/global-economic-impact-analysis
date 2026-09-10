@@ -78,6 +78,23 @@ def _hovertemplates(chart_id: str) -> list[str]:
     ]
 
 
+def _cell_stream(cell_id: str) -> str:
+    for cell in _notebook()["cells"]:
+        if cell.get("id") != cell_id:
+            continue
+        chunks = []
+        for output in cell.get("outputs", []):
+            if output.get("output_type") == "stream":
+                text = output.get("text", [])
+                chunks.append("".join(text) if isinstance(text, list) else str(text))
+        return "".join(chunks)
+    raise KeyError(cell_id)
+
+
+def _trillions(value: float) -> str:
+    return f"${value / 1e12:.2f} trillion"
+
+
 def test_notebook_has_clean_saved_execution_and_generic_kernel():
     notebook = _notebook()
     code_cells = [cell for cell in notebook["cells"] if cell["cell_type"] == "code"]
@@ -184,19 +201,44 @@ def test_notebook_does_not_plot_synthetic_tables():
 
 
 def test_readme_leads_with_computed_gdp_findings():
+    bundle = load_analysis_bundle()
+    story = nominal_gdp_story(bundle.gdp_annual)
+    world = world_gdp_series(bundle.gdp_annual)
+    checks = {
+        row.year: row
+        for row in nominal_vs_real_changes(world, world_gdp_series(bundle.gdp_real_annual))
+    }
+    backtest = expanding_arima_backtest(world)
+    projection = expanding_arima_projection(world, backtest.order)
+    ranking = latest_gdp_ranking(bundle.gdp_annual, limit=15)
     readme = (ROOT / "README.md").read_text()
+    findings = _cell_stream("findings")
+    top5 = ", ".join(
+        ranking.sort_values("nominal_gdp_usd", ascending=False)["country_name"].head(5)
+    )
 
     assert readme.index("World nominal GDP rose") < readme.index("## Preview")
-    assert "86.5×" in readme
-    assert "3.804%" in readme
-    assert "4.574%" in readme
-    assert "China passed Japan in 2010" in readme
+    for text in (readme, findings):
+        assert _trillions(story.start_usd) in text
+        assert _trillions(story.end_usd) in text
+        assert f"{story.growth_multiple:.1f}×" in text
+        assert f"{story.china_share_1990_pct:.1f}%" in text
+        assert f"{story.china_share_latest_pct:.1f}%" in text
+        assert f"{backtest.arima_mape:.3f}%" in text
+        assert f"{backtest.naive_mape:.3f}%" in text
+        assert f"China passed Japan in {story.china_passes_japan_year}" in text
+        assert "2015 is a dollar year" in text
+        assert "2009 and 2020 are real contractions" in text
+        for year in (2009, 2015, 2020):
+            assert (
+                f"{year}: current {checks[year].nominal_change_pct:.1f}%, "
+                f"constant 2015 {checks[year].real_change_pct:.1f}%"
+            ) in text
     assert "ten-year projection is published" in readme
-    assert "2009: current -5.2%, constant 2015 -1.3%" in readme
-    assert "2015: current -5.5%, constant 2015 3.1%" in readme
-    assert "2020: current -2.7%, constant 2015 -2.9%" in readme
-    assert "2015 is a dollar year" in readme
-    assert "2009 and 2020 are real contractions" in readme
+    assert _trillions(projection.median[-1]) in readme
+    assert f"${round(projection.lower[-1] / 1e12)} trillion" in readme
+    assert f"${round(projection.upper[-1] / 1e12)} trillion" in readme
+    assert top5 in readme
 
 
 def test_readme_uses_public_paths_and_safe_previews():
