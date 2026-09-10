@@ -1,6 +1,10 @@
 PYTHON ?= uv run python
 
-.PHONY: generate notebook previews test verify
+.PHONY: fetch-gdp generate notebook previews test verify
+
+fetch-gdp:
+	$(PYTHON) scripts/fetch_world_bank_gdp.py
+	$(PYTHON) scripts/generate_public_profile.py --gdp-source data/open/world-bank/gdp.csv
 
 generate:
 	$(PYTHON) scripts/generate_public_profile.py

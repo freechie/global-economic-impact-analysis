@@ -12,6 +12,7 @@ MAPE_TIE_EPSILON = 1e-9
 ARIMA_ORIGIN_YEAR = 2013
 ARIMA_MAX_LAG = 2
 ARIMA_DIFFERENCE = 1
+ARIMA_FORECAST_STEPS = 10
 CHINA_JAPAN_CROSSING_AFTER_YEAR = 1980
 CHINA_SHARE_START_YEAR = 1990
 SELECTED_TRAJECTORY_COUNTRIES = (
@@ -138,6 +139,16 @@ class ExpandingArimaBacktest:
     @property
     def publishes_projection(self) -> bool:
         return self.arima_mape < self.naive_mape - MAPE_TIE_EPSILON
+
+
+@dataclass(frozen=True)
+class ExpandingArimaProjection:
+    order: tuple[int, int, int]
+    origin_year: int
+    years: tuple[int, ...]
+    median: tuple[float, ...]
+    lower: tuple[float, ...]
+    upper: tuple[float, ...]
 
 
 @dataclass(frozen=True)
@@ -287,9 +298,42 @@ def expanding_arima_backtest(
     )
 
 
+def expanding_arima_projection(
+    series: pd.Series,
+    order: tuple[int, int, int],
+    *,
+    steps: int = ARIMA_FORECAST_STEPS,
+) -> ExpandingArimaProjection:
+    """Forecast log nominal GDP with a fitted ARIMA order and return levels."""
+
+    ordered = series.sort_index()
+    if ordered.empty:
+        raise ValueError("ARIMA projection needs a non-empty series")
+    origin_year = int(ordered.index.max())
+    history = list(np.log(ordered.to_numpy(dtype=float)))
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=ConvergenceWarning)
+        warnings.simplefilter("ignore", category=UserWarning)
+        fitted = ARIMA(history, order=order).fit(method_kwargs={"maxiter": 1000})
+    forecast = fitted.get_forecast(steps=steps)
+    median = np.exp(np.asarray(forecast.predicted_mean, dtype=float))
+    interval = np.asarray(forecast.conf_int(), dtype=float)
+    lower = np.exp(interval[:, 0])
+    upper = np.exp(interval[:, 1])
+    years = tuple(origin_year + offset for offset in range(1, steps + 1))
+    return ExpandingArimaProjection(
+        order=order,
+        origin_year=origin_year,
+        years=years,
+        median=tuple(float(value) for value in median),
+        lower=tuple(float(value) for value in lower),
+        upper=tuple(float(value) for value in upper),
+    )
+
+
 def projection_decision_text(backtest: ExpandingArimaBacktest) -> str:
     if backtest.publishes_projection:
-        return "ARIMA beat the naive baseline. A future projection may be reported."
+        return "ARIMA beat the naive baseline. A ten-year projection is published."
     return (
         "A future projection is not published because ARIMA did not beat the naive baseline."
     )

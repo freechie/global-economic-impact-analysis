@@ -34,7 +34,13 @@ The tracked `public-demo` profile uses these classifications:
 python3 scripts/generate_public_profile.py
 ```
 
-A fresh clone regenerates from the tracked `gdp_annual.csv`. To load a new World Bank download, keep that file outside local licensed profiles and run:
+A fresh clone regenerates from the tracked `gdp_annual.csv`. To pull the latest World Bank GDP series and rebuild the public table:
+
+```bash
+make fetch-gdp
+```
+
+That writes `data/open/world-bank/gdp.csv`, then updates `data/profiles/public-demo`. Both files are public and tracked. To load a file you already downloaded:
 
 ```bash
 python3 scripts/generate_public_profile.py --gdp-source data/open/world-bank/gdp.csv

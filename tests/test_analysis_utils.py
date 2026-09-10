@@ -8,6 +8,7 @@ from src.analysis_utils import (
     annual_percent_change,
     country_gdp,
     expanding_arima_backtest,
+    expanding_arima_projection,
     latest_gdp_ranking,
     nominal_gdp_story,
     projection_decision_text,
@@ -106,7 +107,7 @@ def test_projection_requires_strictly_better_mape():
     assert tied.publishes_projection is False
     assert better.publishes_projection is True
     assert "not published" in projection_decision_text(tied)
-    assert "may be reported" in projection_decision_text(better)
+    assert "ten-year projection is published" in projection_decision_text(better)
 
 
 def test_world_gdp_series_keeps_world_rows_only():
@@ -199,8 +200,20 @@ def test_public_world_gdp_backtest_matches_independent_naive_and_fails_the_gate(
 
     assert result.years[0] == 2013
     assert result.years[-1] == int(series.index.max())
-    assert result.order == (0, 1, 1)
-    assert round(result.arima_mape, 3) == 4.527
-    assert round(result.naive_mape, 3) == 4.506
+    assert result.order == (1, 1, 1)
+    assert round(result.arima_mape, 3) == 3.804
+    assert round(result.naive_mape, 3) == 4.574
     assert result.naive_mape == pytest.approx(independent_naive_mape)
-    assert result.publishes_projection is False
+    assert result.publishes_projection is True
+
+
+def test_public_world_gdp_projection_starts_after_the_latest_observed_year():
+    series = world_gdp_series(load_analysis_bundle().gdp_annual)
+    backtest = expanding_arima_backtest(series)
+    projection = expanding_arima_projection(series, backtest.order)
+
+    assert projection.origin_year == int(series.index.max())
+    assert projection.years[0] == projection.origin_year + 1
+    assert len(projection.years) == 10
+    assert projection.years == tuple(range(projection.origin_year + 1, projection.origin_year + 11))
+    assert all(low < mid < high for low, mid, high in zip(projection.lower, projection.median, projection.upper))

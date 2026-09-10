@@ -53,6 +53,7 @@ from src.analysis_utils import (
     annual_percent_change,
     country_gdp,
     expanding_arima_backtest,
+    expanding_arima_projection,
     latest_gdp_ranking,
     nominal_gdp_story,
     projection_decision_text,
@@ -63,7 +64,13 @@ from src.data_loader import load_analysis_bundle
 pio.renderers.default = "plotly_mimetype"
 bundle = load_analysis_bundle()
 story = nominal_gdp_story(bundle.gdp_annual)
-backtest = expanding_arima_backtest(world_gdp_series(bundle.gdp_annual))
+world_series = world_gdp_series(bundle.gdp_annual)
+backtest = expanding_arima_backtest(world_series)
+projection = (
+    expanding_arima_projection(world_series, backtest.order)
+    if backtest.publishes_projection
+    else None
+)
 OPEN_DISCLOSURE = "World Bank Open Data, GDP (current US$). License: CC BY 4.0."
 
 def disclose(fig, chart_id, title, table_name):
@@ -94,7 +101,7 @@ declines = ", ".join(
 )
 print(
     f"World nominal GDP rose from {trillions(story.start_usd)} in {story.start_year} "
-    f"to {trillions(story.end_usd)} in {story.end_year}, a {story.growth_multiple:.1f}× increase."
+    f"to {trillions(story.end_usd)} in {story.end_year}, {story.growth_multiple:.1f}×."
 )
 print(
     f"The sharpest current-dollar year-over-year declines are {declines}. "
@@ -149,7 +156,7 @@ disclose(fig, "gdp-selected-trajectories", "2. Selected nominal GDP trajectories
         markdown(
             "chart-02-note",
             """
-Log scale keeps early China and India visible. A linear axis hides them behind the United States.
+Log scale keeps early China and India visible. A linear axis hides them behind the United States. China sits above Japan in 1960 in this file. That early reading is a World Bank current-dollar artifact. The first year China exceeds Japan after 1980 is 2010.
 """,
         ),
         code(
@@ -160,21 +167,30 @@ fig = px.line(growth.dropna(subset=["annual_change_pct"]), x="year", y="annual_c
 disclose(fig, "gdp-annual-change", "3. Annual nominal GDP change", "gdp_annual").show()
 """,
         ),
-        code(
-            "chart-04",
+        markdown(
+            "chart-03-note",
             """
-countries = country_gdp(bundle.gdp_annual)
-fig = px.choropleth(countries, locations="country_code", color="nominal_gdp_usd", hover_name="country_name", animation_frame="year", color_continuous_scale="Blues", labels={"nominal_gdp_usd": "Current US$", "year": "Year"})
-disclose(fig, "gdp-country-map", "4. Nominal GDP by country over time", "gdp_annual").show()
+These are current-dollar changes, so inflation and exchange rates move the lines. China's swings are larger than the United States. 2015 is a dollar year, not a China collapse.
 """,
         ),
         code(
-            "chart-05",
+            "chart-04",
             """
 ranking = latest_gdp_ranking(bundle.gdp_annual, limit=15)
 ranking_year = int(ranking["year"].iloc[0])
 fig = px.bar(ranking, x="nominal_gdp_usd", y="country_name", orientation="h", labels={"nominal_gdp_usd": "Current US$", "country_name": "Country"})
-disclose(fig, "gdp-latest-ranking", f"5. Largest nominal GDP observations in {ranking_year}", "gdp_annual").show()
+disclose(fig, "gdp-latest-ranking", f"4. Largest nominal GDP observations in {ranking_year}", "gdp_annual").show()
+print(
+    f"Largest {ranking_year} current-dollar GDP: "
+    + ", ".join(ranking.sort_values("nominal_gdp_usd", ascending=False)["country_name"].head(5))
+    + "."
+)
+""",
+        ),
+        markdown(
+            "chart-04-note",
+            """
+The ranking uses current US dollars in the latest year. Exchange rates can move the order. World Bank aggregates are excluded.
 """,
         ),
         markdown(
@@ -188,7 +204,7 @@ A ten-year projection is published only if the selected ARIMA MAPE is strictly b
 """,
         ),
         code(
-            "chart-06",
+            "chart-05",
             """
 backtest_frame = pd.DataFrame(
     {
@@ -218,7 +234,7 @@ fig.add_trace(
         line={"dash": "dot"},
     )
 )
-disclose(fig, "gdp-arima-backtest", "6. Nominal World GDP expanding one-step backtest", "gdp_annual")
+disclose(fig, "gdp-arima-backtest", "5. Nominal World GDP expanding one-step backtest", "gdp_annual")
 fig.update_layout(xaxis_title="Year", yaxis_title="Nominal GDP, current US$")
 fig.show()
 print(
@@ -228,14 +244,73 @@ print(
 print(projection_decision_text(backtest))
 """,
         ),
+        code(
+            "chart-06",
+            """
+if projection is None:
+    print(projection_decision_text(backtest))
+else:
+    recent = world_series.loc[world_series.index >= projection.origin_year - 14]
+    fig = go.Figure()
+    fig.add_trace(
+        go.Scatter(
+            x=list(recent.index),
+            y=list(recent.to_numpy()),
+            mode="lines+markers",
+            name="Observed",
+        )
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=list(projection.years),
+            y=list(projection.upper),
+            mode="lines",
+            line={"width": 0},
+            showlegend=False,
+            hoverinfo="skip",
+            name="95% upper",
+        )
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=list(projection.years),
+            y=list(projection.lower),
+            mode="lines",
+            line={"width": 0},
+            fill="tonexty",
+            name="95% interval",
+        )
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=list(projection.years),
+            y=list(projection.median),
+            mode="lines+markers",
+            name=f"ARIMA{projection.order} median",
+        )
+    )
+    disclose(fig, "gdp-arima-projection", "6. Ten-year World GDP projection", "gdp_annual")
+    fig.update_layout(xaxis_title="Year", yaxis_title="Nominal GDP, current US$")
+    fig.show()
+    print(
+        f"Median path: {trillions(world_series.loc[projection.origin_year])} in {projection.origin_year} "
+        f"to {trillions(projection.median[-1])} in {projection.years[-1]}."
+    )
+    print("Bands are 95% intervals on log nominal GDP. They are not a policy forecast.")
+""",
+        ),
+        markdown(
+            "chart-06-note",
+            """
+The projection uses the selected log ARIMA order on current-dollar World GDP. Interval bands widen quickly. This series still mixes real output, inflation, and exchange rates.
+""",
+        ),
         markdown(
             "conclusion",
             """
 ## Conclusion
 
-Current-dollar GDP mixes real output, inflation, and exchange rates. The selected ARIMA specification does not beat last year's value, so this notebook does not publish a ten-year GDP projection.
-
-Event-impact claims need a causal design and real GDP. Country maps and rankings exclude World Bank aggregates.
+Current-dollar GDP mixes real output, inflation, and exchange rates. A ten-year path is published only when the selected ARIMA specification beats last year's value. The bands are wide. Event-impact claims need a causal design and real GDP. Rankings exclude World Bank aggregates.
 """,
         ),
     ]

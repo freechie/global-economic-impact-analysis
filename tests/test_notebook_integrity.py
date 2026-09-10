@@ -10,9 +10,9 @@ OPEN_CHART_IDS = (
     "gdp-world-trend",
     "gdp-selected-trajectories",
     "gdp-annual-change",
-    "gdp-country-map",
     "gdp-latest-ranking",
     "gdp-arima-backtest",
+    "gdp-arima-projection",
 )
 
 
@@ -72,18 +72,25 @@ def test_every_saved_figure_discloses_open_gdp_provenance():
         assert "World Bank Open Data" in figure["layout"]["meta"]["provenance"]
 
 
-def test_fifth_figure_is_a_gdp_only_ranking():
-    fifth = _figures()[4]
+def test_ranking_figure_is_gdp_only():
+    ranking = _figure("gdp-latest-ranking")
 
-    assert fifth["layout"]["meta"]["chart_id"] == "gdp-latest-ranking"
-    assert fifth["layout"]["meta"]["table"] == "gdp_annual"
-    assert "GDP" in fifth["layout"]["title"]["text"]
+    assert ranking["layout"]["meta"]["table"] == "gdp_annual"
+    assert "GDP" in ranking["layout"]["title"]["text"]
 
 
 def test_selected_trajectories_use_log_y_axis():
     yaxis = _figure("gdp-selected-trajectories")["layout"]["yaxis"]
 
     assert yaxis.get("type") == "log"
+
+
+def test_arima_projection_includes_observed_and_median_path():
+    names = [trace.get("name") for trace in _figure("gdp-arima-projection")["data"]]
+
+    assert names[0] == "Observed"
+    assert any(name and "median" in name for name in names)
+    assert "95% interval" in names
 
 
 def test_arima_backtest_compares_observed_arima_and_naive():
@@ -94,15 +101,16 @@ def test_arima_backtest_compares_observed_arima_and_naive():
     assert "Previous-year baseline" in names
 
 
-def test_geographic_figures_keep_year_animation_controls():
-    figure = _figure("gdp-country-map")
-    assert len(figure["frames"]) > 1
-    assert "sliders" in figure["layout"]
-    assert any(
-        button.get("label") in {"&#9654;", "Play"}
-        for menu in figure["layout"].get("updatemenus", [])
-        for button in menu.get("buttons", [])
-    )
+def test_saved_figures_are_not_animated():
+    for figure in _figures():
+        assert not figure.get("frames")
+
+
+def test_notebook_notes_the_1960_china_japan_artifact():
+    source = "\n".join("".join(cell.get("source", [])) for cell in _notebook()["cells"])
+
+    assert "China sits above Japan in 1960" in source
+    assert "after 1980 is 2010" in source
 
 
 def test_notebook_has_no_raw_data_appendix():
@@ -126,11 +134,11 @@ def test_readme_leads_with_computed_gdp_findings():
     readme = (ROOT / "README.md").read_text()
 
     assert readme.index("World nominal GDP rose") < readme.index("## Preview")
-    assert "72.6×" in readme
-    assert "4.527%" in readme
-    assert "4.506%" in readme
+    assert "86.5×" in readme
+    assert "3.804%" in readme
+    assert "4.574%" in readme
     assert "China passed Japan in 2010" in readme
-    assert "future projection is not published" in readme
+    assert "ten-year projection is published" in readme
 
 
 def test_readme_uses_public_paths_and_safe_previews():
@@ -143,12 +151,15 @@ def test_readme_uses_public_paths_and_safe_previews():
     }
 
     assert "data/profiles/public-demo" in readme
+    assert "data/open/world-bank" in readme
     assert "uv sync --locked --dev" in readme
+    assert "make notebook" in readme
     assert "make verify" in readme
     assert "GEIA_DATA_DIR" in readme
     assert preview_references == {
         "docs/previews/selected-gdp-trajectories.png",
         "docs/previews/gdp-arima-backtest.png",
+        "docs/previews/gdp-arima-projection.png",
         "docs/previews/world-gdp-trend.png",
     }
     assert all((ROOT / reference).is_file() for reference in preview_references)

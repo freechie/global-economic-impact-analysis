@@ -63,11 +63,11 @@
     "gdp_annual": {
       "classification": "open",
       "filename": "gdp_annual.csv",
-      "sha256": "4e1f20873bf32aeba02231ff365ac51e6aa055567d28062a345b1efe39a6c6ec",
+      "sha256": "efa94b308b06dd3173c97f849680f630af700cf372699ace41afb9c070cf510b",
       "source": {
         "changes": "Normalized to canonical columns, removed invalid and nonpositive observations, and added aggregate flags.",
         "coverage": {
-          "end_year": 2022,
+          "end_year": 2025,
           "start_year": 1960
         },
         "license": "CC BY 4.0",
