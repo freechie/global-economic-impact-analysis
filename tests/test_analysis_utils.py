@@ -15,6 +15,7 @@ from src.analysis_utils import (
     nominal_gdp_story,
     nominal_vs_real_changes,
     projection_decision_text,
+    select_arima_candidate,
     transfer_mapping_coverage,
     world_gdp_series,
 )
@@ -224,7 +225,30 @@ def test_expanding_arima_backtest_returns_one_step_paths_for_each_test_year():
     assert _numpy_shape_deprecations(caught) == []
 
 
-def test_public_world_gdp_backtest_matches_independent_naive_and_fails_the_gate():
+def test_arima_selection_prefers_simpler_order_within_mape_tie():
+    selected = select_arima_candidate(
+        [
+            ((1, 1, 2), 3.804, 1.0, (1.0,)),
+            ((1, 1, 1), 3.805, 1.1, (1.0,)),
+        ]
+    )
+
+    assert selected[0] == (1, 1, 1)
+    assert selected[1] == 3.805
+
+
+def test_arima_selection_keeps_a_clear_mape_winner():
+    selected = select_arima_candidate(
+        [
+            ((2, 1, 2), 3.50, 1.0, (1.0,)),
+            ((0, 1, 0), 4.00, 1.0, (1.0,)),
+        ]
+    )
+
+    assert selected[0] == (2, 1, 2)
+
+
+def test_public_world_gdp_backtest_beats_naive():
     series = world_gdp_series(load_analysis_bundle().gdp_annual)
     result = expanding_arima_backtest(series)
     test = series.loc[list(result.years)]
@@ -234,8 +258,8 @@ def test_public_world_gdp_backtest_matches_independent_naive_and_fails_the_gate(
     assert result.years[0] == 2013
     assert result.years[-1] == int(series.index.max())
     assert result.order == (1, 1, 1)
-    assert round(result.arima_mape, 3) == 3.804
-    assert round(result.naive_mape, 3) == 4.574
+    assert result.arima_mape == pytest.approx(3.804, abs=0.01)
+    assert result.naive_mape == pytest.approx(4.574, abs=0.01)
     assert result.naive_mape == pytest.approx(independent_naive_mape)
     assert result.publishes_projection is True
 

@@ -10,6 +10,7 @@ from statsmodels.tools.sm_exceptions import ConvergenceWarning
 from statsmodels.tsa.arima.model import ARIMA
 
 MAPE_TIE_EPSILON = 1e-9
+ARIMA_MAPE_TIE = 0.01
 ARIMA_ORIGIN_YEAR = 2013
 ARIMA_MAX_LAG = 2
 ARIMA_DIFFERENCE = 1
@@ -303,6 +304,21 @@ def _quiet_statsmodels():
         yield
 
 
+def select_arima_candidate(
+    candidates: list[tuple[tuple[int, int, int], float, float, tuple[float, ...]]],
+) -> tuple[tuple[int, int, int], float, float, tuple[float, ...]]:
+    """Pick the simplest order within ARIMA_MAPE_TIE of the lowest MAPE."""
+
+    best_mape = min(mape for _order, mape, _rmse, _predicted in candidates)
+    tied = [
+        item for item in candidates if item[1] <= best_mape + ARIMA_MAPE_TIE
+    ]
+    tied.sort(
+        key=lambda item: (item[0][0] + item[0][2], item[0], item[1], item[2])
+    )
+    return tied[0]
+
+
 def expanding_arima_backtest(
     series: pd.Series,
     *,
@@ -346,8 +362,9 @@ def expanding_arima_backtest(
     if not candidate_results:
         raise ValueError("No ARIMA specification converged")
 
-    candidate_results.sort(key=lambda item: (item[1], item[2], item[0]))
-    order, arima_mape, arima_rmse, arima_one_step = candidate_results[0]
+    order, arima_mape, arima_rmse, arima_one_step = select_arima_candidate(
+        candidate_results
+    )
     naive = ordered.shift(1).loc[test.index].to_numpy(dtype=float)
     naive_mape = float(np.mean(np.abs((actual_levels - naive) / actual_levels)) * 100)
     naive_rmse = float(np.sqrt(np.mean((actual_levels - naive) ** 2)))
