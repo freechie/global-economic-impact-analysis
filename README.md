@@ -5,8 +5,11 @@
 World nominal GDP rose from $1.37 trillion in 1960 to $118.35 trillion in 2025, an 86.5× increase. That total is the world's output converted into US dollars, so a strong dollar can shrink the number even when economies keep growing. The sharpest year-to-year drops are 2015 at -5.5%, 2009 at -5.2%, and 2020 at -2.7%.
 
 2009: current -5.2%, constant 2015 -1.3%.
+
 2015: current -5.5%, constant 2015 3.1%.
+
 2020: current -2.7%, constant 2015 -2.9%.
+
 Current dollars mix output, inflation, and exchange rates. Constant 2015 dollars hold prices still. 2015 is a dollar year: the dollar strengthened, so the world total fell in dollars while real output grew 3.1%. 2009 and 2020 are real contractions: output itself fell.
 
 China was 6.1% of U.S. GDP in 1990 and 63.4% in 2025. In dollar terms China went from a small share of the US economy to nearly two-thirds as large. China passed Japan in 2010.
