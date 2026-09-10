@@ -9,6 +9,7 @@ import numpy as np
 import pytest
 
 from src.analysis_utils import (
+    ARIMA_MAPE_TIE,
     country_gdp,
     expanding_arima_backtest,
     expanding_arima_projection,
@@ -93,6 +94,18 @@ def _cell_stream(cell_id: str) -> str:
 
 def _trillions(value: float) -> str:
     return f"${value / 1e12:.2f} trillion"
+
+
+def _three_decimal_percents(text: str) -> list[float]:
+    return [float(match) for match in re.findall(r"(\d+\.\d{3})%", text)]
+
+
+def _assert_text_has_mape(text: str, value: float) -> None:
+    found = _three_decimal_percents(text)
+    assert found, "expected a three-decimal percent MAPE figure"
+    assert any(item == pytest.approx(value, abs=ARIMA_MAPE_TIE) for item in found), (
+        f"expected MAPE near {value:.3f}% among {found}"
+    )
 
 
 def test_notebook_has_clean_saved_execution_and_generic_kernel():
@@ -200,6 +213,18 @@ def test_notebook_does_not_plot_synthetic_tables():
     assert "arms_by_category_annual" not in source
 
 
+def test_mape_lock_allows_linux_mac_thousandth_drift():
+    readme = (
+        "Guessing that next year's world GDP equals this year's was off by "
+        "4.574%. An ARIMA(1, 1, 1) model was off by 3.804%."
+    )
+
+    _assert_text_has_mape(readme, 3.805)
+    _assert_text_has_mape(readme, 4.574)
+    with pytest.raises(AssertionError):
+        _assert_text_has_mape(readme, 3.700)
+
+
 def test_readme_leads_with_computed_gdp_findings():
     bundle = load_analysis_bundle()
     story = nominal_gdp_story(bundle.gdp_annual)
@@ -224,8 +249,8 @@ def test_readme_leads_with_computed_gdp_findings():
         assert f"{story.growth_multiple:.1f}×" in text
         assert f"{story.china_share_1990_pct:.1f}%" in text
         assert f"{story.china_share_latest_pct:.1f}%" in text
-        assert f"{backtest.arima_mape:.3f}%" in text
-        assert f"{backtest.naive_mape:.3f}%" in text
+        _assert_text_has_mape(text, backtest.arima_mape)
+        _assert_text_has_mape(text, backtest.naive_mape)
         assert f"China passed Japan in {story.china_passes_japan_year}" in text
         assert "2015 is a dollar year" in text
         assert "2009 and 2020 are real contractions" in text
@@ -381,8 +406,8 @@ def test_arima_backtest_traces_match_model_and_show_mape():
     )
     assert figure["layout"]["hovermode"] == "x unified"
     assert all("trillion" in template for template in _hovertemplates("gdp-arima-backtest"))
-    assert f"{backtest.arima_mape:.3f}%" in text
-    assert f"{backtest.naive_mape:.3f}%" in text
+    _assert_text_has_mape(text, backtest.arima_mape)
+    _assert_text_has_mape(text, backtest.naive_mape)
 
 
 def test_arima_projection_traces_match_model_and_show_interval():
