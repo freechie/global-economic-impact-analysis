@@ -2,11 +2,16 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
+import sys
 
 import nbformat
 from nbconvert.preprocessors import ExecutePreprocessor
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
+from scripts.generate_public_profile import generate
+
 NOTEBOOK_PATH = ROOT / "Global Economic Impact Analysis.ipynb"
 
 
@@ -29,7 +34,7 @@ def build_notebook() -> nbformat.NotebookNode:
             """
 # Global economic impact analysis
 
-Every chart uses World Bank GDP in current US dollars, license CC BY 4.0. Numbers come from `gdp_annual.csv`. Set `GEIA_DATA_DIR` to point at another complete profile. The loader does not fall back to `public-demo`.
+Charts use World Bank GDP in current US dollars and constant 2015 US dollars, license CC BY 4.0. Numbers come from `gdp_annual.csv` and `gdp_real_annual.csv`. Set `GEIA_DATA_DIR` to load another complete profile. The loader does not fall back to `public-demo`.
 """,
         ),
         code(
@@ -50,12 +55,12 @@ sys.path.insert(0, str(ROOT))
 
 from src.analysis_utils import (
     SELECTED_TRAJECTORY_COUNTRIES,
-    annual_percent_change,
     country_gdp,
     expanding_arima_backtest,
     expanding_arima_projection,
     latest_gdp_ranking,
     nominal_gdp_story,
+    nominal_vs_real_changes,
     projection_decision_text,
     world_gdp_series,
 )
@@ -65,23 +70,29 @@ pio.renderers.default = "plotly_mimetype"
 bundle = load_analysis_bundle()
 story = nominal_gdp_story(bundle.gdp_annual)
 world_series = world_gdp_series(bundle.gdp_annual)
+real_series = world_gdp_series(bundle.gdp_real_annual)
+output_checks = nominal_vs_real_changes(world_series, real_series)
 backtest = expanding_arima_backtest(world_series)
 projection = (
     expanding_arima_projection(world_series, backtest.order)
     if backtest.publishes_projection
     else None
 )
-OPEN_DISCLOSURE = "World Bank Open Data, GDP (current US$). License: CC BY 4.0."
+OPEN_DISCLOSURES = {
+    "gdp_annual": "World Bank Open Data, GDP (current US$). License: CC BY 4.0.",
+    "gdp_real_annual": "World Bank Open Data, GDP (constant 2015 US$). License: CC BY 4.0.",
+}
 
-def disclose(fig, chart_id, title, table_name):
+def disclose(fig, chart_id, title, table_name, disclosure=None):
+    provenance = disclosure or OPEN_DISCLOSURES[table_name]
     fig.update_layout(
-        title={"text": f"{title}<br><sup>{OPEN_DISCLOSURE}</sup>"},
+        title={"text": f"{title}<br><sup>{provenance}</sup>"},
         template="plotly_white",
         autosize=True,
         meta={
             "chart_id": chart_id,
             "classification": "open",
-            "provenance": OPEN_DISCLOSURE,
+            "provenance": provenance,
             "table": table_name,
             "profile_id": bundle.profile.profile_id,
         },
@@ -104,9 +115,14 @@ print(
     f"to {trillions(story.end_usd)} in {story.end_year}, {story.growth_multiple:.1f}×."
 )
 print(
-    f"The sharpest current-dollar year-over-year declines are {declines}. "
-    "The 2015 drop is mostly a strong dollar, not a collapse in world output."
+    f"The sharpest current-dollar year-over-year declines are {declines}."
 )
+for check in output_checks:
+    print(
+        f"{check.year}: current {check.nominal_change_pct:.1f}%, "
+        f"constant 2015 {check.real_change_pct:.1f}%."
+    )
+print("2015 is a dollar year. 2009 and 2020 are real contractions.")
 print(
     f"China was {story.china_share_1990_pct:.1f}% of U.S. GDP in 1990 and "
     f"{story.china_share_latest_pct:.1f}% in {story.latest_year}. "
@@ -119,7 +135,7 @@ print(
 print(projection_decision_text(backtest))
 """,
         ),
-        markdown("open-heading", "## Open-data GDP figures"),
+        markdown("open-heading", "## GDP charts"),
         code(
             "chart-01",
             """
@@ -133,11 +149,54 @@ disclose(fig, "gdp-world-trend", "1. World nominal GDP over time", "gdp_annual")
         markdown(
             "chart-01-note",
             """
-Current-dollar World GDP mixes real output, inflation, and exchange rates. 2015 is the largest drop in this series. It is not a 2009-scale or 2020-scale world recession.
+Current-dollar World GDP mixes real output, inflation, and exchange rates. 2015 is the largest drop in this series. 2009 and 2020 were recessions. 2015 was not.
 """,
         ),
         code(
             "chart-02",
+            """
+nominal_yoy = world_series.pct_change() * 100
+real_yoy = real_series.pct_change() * 100
+years = nominal_yoy.index.intersection(real_yoy.index)
+compare = pd.DataFrame(
+    {
+        "year": years,
+        "Current US$": nominal_yoy.loc[years].to_numpy(),
+        "Constant 2015 US$": real_yoy.loc[years].to_numpy(),
+    }
+)
+long = compare.melt(id_vars="year", var_name="series", value_name="annual_change_pct")
+fig = px.line(
+    long.dropna(),
+    x="year",
+    y="annual_change_pct",
+    color="series",
+    labels={"annual_change_pct": "Annual change (%)", "series": "Series", "year": "Year"},
+)
+for year, label in ((2009, "2009"), (2015, "2015 FX"), (2020, "2020")):
+    fig.add_vline(x=year, line_dash="dot", annotation_text=label, annotation_position="top")
+disclose(
+    fig,
+    "gdp-nominal-vs-real",
+    "2. World GDP annual change, current vs constant 2015 dollars",
+    "gdp_real_annual",
+    disclosure="World Bank Open Data, GDP current US dollars and constant 2015 US dollars. License: CC BY 4.0.",
+).show()
+for check in output_checks:
+    print(
+        f"{check.year}: current {check.nominal_change_pct:.1f}%, "
+        f"constant 2015 {check.real_change_pct:.1f}%."
+    )
+""",
+        ),
+        markdown(
+            "chart-02-note",
+            """
+Constant 2015 dollars remove most of the exchange-rate and US-inflation movement in the current-dollar series. 2015 is a dollar year. 2009 and 2020 remain real contractions.
+""",
+        ),
+        code(
+            "chart-03",
             """
 selected = country_gdp(bundle.gdp_annual).loc[
     lambda frame: frame["country_name"].isin(SELECTED_TRAJECTORY_COUNTRIES)
@@ -150,27 +209,13 @@ fig = px.line(
     labels={"nominal_gdp_usd": "Current US$", "country_name": "Country", "year": "Year"},
 )
 fig.update_yaxes(type="log")
-disclose(fig, "gdp-selected-trajectories", "2. Selected nominal GDP trajectories, log scale", "gdp_annual").show()
-""",
-        ),
-        markdown(
-            "chart-02-note",
-            """
-Log scale keeps early China and India visible. A linear axis hides them behind the United States. China sits above Japan in 1960 in this file. That early reading is a World Bank current-dollar artifact. The first year China exceeds Japan after 1980 is 2010.
-""",
-        ),
-        code(
-            "chart-03",
-            """
-growth = annual_percent_change(selected, group_column="country_name", value_column="nominal_gdp_usd")
-fig = px.line(growth.dropna(subset=["annual_change_pct"]), x="year", y="annual_change_pct", color="country_name", labels={"annual_change_pct": "Annual change (%)", "country_name": "Country", "year": "Year"})
-disclose(fig, "gdp-annual-change", "3. Annual nominal GDP change", "gdp_annual").show()
+disclose(fig, "gdp-selected-trajectories", "3. Selected nominal GDP trajectories, log scale", "gdp_annual").show()
 """,
         ),
         markdown(
             "chart-03-note",
             """
-These are current-dollar changes, so inflation and exchange rates move the lines. China's swings are larger than the United States. 2015 is a dollar year, not a China collapse.
+Log scale keeps early China and India visible. A linear axis hides them behind the United States. China sits above Japan in 1960 in this file. That early reading is a World Bank current-dollar artifact. The first year China exceeds Japan after 1980 is 2010.
 """,
         ),
         code(
@@ -190,7 +235,7 @@ print(
         markdown(
             "chart-04-note",
             """
-The ranking uses current US dollars in the latest year. Exchange rates can move the order. World Bank aggregates are excluded.
+The ranking uses current US dollars in the latest year. Exchange rates can change the order. The ranking excludes World Bank aggregates.
 """,
         ),
         markdown(
@@ -198,9 +243,9 @@ The ranking uses current US dollars in the latest year. Exchange rates can move 
             """
 ## ARIMA backtest
 
-`p` and `q` run from 0 to 2 with one difference. Each candidate is scored with expanding one-step forecasts from 2013 through the latest World GDP year, then compared with last year's value.
+`p` and `q` run from 0 to 2 with one difference. Each candidate gets expanding one-step forecasts from 2013 through the latest World GDP year. The code compares the winner with last year's value.
 
-A ten-year projection is published only if the selected ARIMA MAPE is strictly below that baseline. The model uses log nominal GDP. It does not include inflation, policy, or crises.
+The notebook publishes a ten-year projection only if the selected ARIMA MAPE is strictly below that baseline. The model uses log nominal GDP. It does not model inflation or policy.
 """,
         ),
         code(
@@ -302,7 +347,7 @@ else:
         markdown(
             "chart-06-note",
             """
-The projection uses the selected log ARIMA order on current-dollar World GDP. Interval bands widen quickly. This series still mixes real output, inflation, and exchange rates.
+The projection uses the selected log ARIMA order on current-dollar World GDP. Interval bands widen quickly. Current-dollar GDP still mixes real output, inflation, and exchange rates.
 """,
         ),
         markdown(
@@ -310,7 +355,7 @@ The projection uses the selected log ARIMA order on current-dollar World GDP. In
             """
 ## Conclusion
 
-Current-dollar GDP mixes real output, inflation, and exchange rates. A ten-year path is published only when the selected ARIMA specification beats last year's value. The bands are wide. Event-impact claims need a causal design and real GDP. Rankings exclude World Bank aggregates.
+Current-dollar GDP mixes real output, inflation, and exchange rates. Constant 2015 dollars show 2015 as a dollar year. They keep 2009 and 2020 as real contractions. The notebook publishes a ten-year path only when the selected ARIMA specification beats last year's value. The bands are wide. These charts cannot measure the effect of an event. That needs a causal design. Rankings exclude World Bank aggregates.
 """,
         ),
     ]
@@ -333,6 +378,7 @@ def main() -> None:
 
     notebook = build_notebook()
     if args.execute:
+        generate()
         executor = ExecutePreprocessor(timeout=600, kernel_name="python3")
         executor.preprocess(notebook, {"metadata": {"path": str(ROOT)}})
         for cell in notebook.cells:

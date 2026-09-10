@@ -13,6 +13,7 @@ import pandas as pd
 
 SCHEMA_VERSION = "1.0"
 PUBLIC_PROFILE_ID = "public-demo"
+PUBLIC_OPEN_TABLES = frozenset({"gdp_annual", "gdp_real_annual"})
 SYNTHETIC_DISCLOSURE = "Synthetic demonstration data. Values are fictional and are not observed measurements."
 
 
@@ -42,6 +43,15 @@ DATASET_SPECS: Mapping[str, DatasetSpec] = MappingProxyType(
             integer_columns=("year",),
             numeric_columns=("nominal_gdp_usd",),
             nonnegative_columns=("nominal_gdp_usd",),
+            unique_key=("country_code", "year"),
+        ),
+        "gdp_real_annual": DatasetSpec(
+            "gdp_real_annual.csv",
+            ("country_name", "country_code", "year", "real_gdp_2015_usd", "is_aggregate"),
+            string_columns=("country_name", "country_code", "is_aggregate"),
+            integer_columns=("year",),
+            numeric_columns=("real_gdp_2015_usd",),
+            nonnegative_columns=("real_gdp_2015_usd",),
             unique_key=("country_code", "year"),
         ),
         "arms_by_category_annual": DatasetSpec(
@@ -140,6 +150,7 @@ class AnalysisProfile:
 class AnalysisBundle:
     profile: AnalysisProfile
     gdp_annual: pd.DataFrame
+    gdp_real_annual: pd.DataFrame
     arms_by_category_annual: pd.DataFrame
     arms_by_entity_annual: pd.DataFrame
     aircraft_orders_monthly: pd.DataFrame
@@ -229,20 +240,20 @@ def _validate_manifest(raw: object) -> tuple[dict[str, object], list[str]]:
             )
         if profile_id == PUBLIC_PROFILE_ID:
             expected_classification = (
-                "open" if table_name == "gdp_annual" else "synthetic"
+                "open" if table_name in PUBLIC_OPEN_TABLES else "synthetic"
             )
             if entry.get("classification") != expected_classification:
                 problems.append(
                     f"profile.json: public-demo {table_name} must be {expected_classification}"
                 )
-            if table_name == "gdp_annual" and isinstance(provenance, dict):
+            if table_name in PUBLIC_OPEN_TABLES and isinstance(provenance, dict):
                 if provenance.get("license") != "CC BY 4.0" or "World Bank" not in str(
                     provenance.get("name", "")
                 ):
                     problems.append(
-                        "profile.json: public-demo gdp_annual requires World Bank and CC BY 4.0 attribution"
+                        f"profile.json: public-demo {table_name} requires World Bank and CC BY 4.0 attribution"
                     )
-            if table_name != "gdp_annual" and isinstance(provenance, dict):
+            if table_name not in PUBLIC_OPEN_TABLES and isinstance(provenance, dict):
                 if provenance.get("disclosure") != SYNTHETIC_DISCLOSURE:
                     problems.append(
                         f"profile.json: public-demo {table_name} requires the synthetic disclosure"
@@ -299,7 +310,7 @@ def _validate_table(
         ):
             problems.append(f"{spec.filename}: {column} must be nonnegative")
 
-    if table_name == "gdp_annual":
+    if "is_aggregate" in parsed.columns:
         aggregate_flags = parsed["is_aggregate"].str.lower()
         if not set(aggregate_flags.dropna()).issubset({"true", "false"}):
             problems.append(f"{spec.filename}: is_aggregate must contain true or false")

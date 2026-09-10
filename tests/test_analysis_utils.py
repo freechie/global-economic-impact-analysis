@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import warnings
+
 import pandas as pd
 import pytest
 
@@ -11,6 +13,7 @@ from src.analysis_utils import (
     expanding_arima_projection,
     latest_gdp_ranking,
     nominal_gdp_story,
+    nominal_vs_real_changes,
     projection_decision_text,
     transfer_mapping_coverage,
     world_gdp_series,
@@ -178,10 +181,39 @@ def test_nominal_gdp_story_uses_world_path_and_post_1980_china_japan_crossing():
     assert story.china_passes_japan_year == 2010
 
 
+def test_nominal_vs_real_changes_keep_named_years():
+    nominal = pd.Series(
+        {2008: 100.0, 2009: 90.0, 2014: 100.0, 2015: 90.0, 2019: 100.0, 2020: 97.0}
+    )
+    real = pd.Series(
+        {2008: 100.0, 2009: 97.0, 2014: 100.0, 2015: 103.0, 2019: 100.0, 2020: 96.0}
+    )
+
+    checks = {row.year: row for row in nominal_vs_real_changes(nominal, real)}
+
+    assert checks[2009].nominal_change_pct == pytest.approx(-10.0)
+    assert checks[2009].real_change_pct == pytest.approx(-3.0)
+    assert checks[2015].nominal_change_pct == pytest.approx(-10.0)
+    assert checks[2015].real_change_pct == pytest.approx(3.0)
+    assert checks[2020].nominal_change_pct == pytest.approx(-3.0)
+    assert checks[2020].real_change_pct == pytest.approx(-4.0)
+
+
+def _numpy_shape_deprecations(caught: list[warnings.WarningMessage]) -> list[str]:
+    return [
+        str(item.message)
+        for item in caught
+        if issubclass(item.category, DeprecationWarning)
+        and "Setting the shape on a NumPy array" in str(item.message)
+    ]
+
+
 def test_expanding_arima_backtest_returns_one_step_paths_for_each_test_year():
     years = list(range(2000, 2023))
     series = pd.Series([100.0 * (1.04 ** index) for index in range(len(years))], index=years)
-    result = expanding_arima_backtest(series)
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        result = expanding_arima_backtest(series)
     test = series.loc[list(result.years)]
     naive = series.shift(1).loc[test.index]
     independent_naive_mape = float((abs(test - naive) / test).mean() * 100)
@@ -189,6 +221,7 @@ def test_expanding_arima_backtest_returns_one_step_paths_for_each_test_year():
     assert result.years == tuple(range(2013, 2023))
     assert len(result.arima_one_step) == 10
     assert result.naive_mape == pytest.approx(independent_naive_mape)
+    assert _numpy_shape_deprecations(caught) == []
 
 
 def test_public_world_gdp_backtest_matches_independent_naive_and_fails_the_gate():
@@ -207,13 +240,34 @@ def test_public_world_gdp_backtest_matches_independent_naive_and_fails_the_gate(
     assert result.publishes_projection is True
 
 
+def test_public_2015_is_a_dollar_year_not_a_real_contraction():
+    bundle = load_analysis_bundle()
+    checks = {
+        row.year: row
+        for row in nominal_vs_real_changes(
+            world_gdp_series(bundle.gdp_annual),
+            world_gdp_series(bundle.gdp_real_annual),
+        )
+    }
+
+    assert round(checks[2009].nominal_change_pct, 1) == -5.2
+    assert round(checks[2009].real_change_pct, 1) == -1.3
+    assert round(checks[2015].nominal_change_pct, 1) == -5.5
+    assert round(checks[2015].real_change_pct, 1) == 3.1
+    assert round(checks[2020].nominal_change_pct, 1) == -2.7
+    assert round(checks[2020].real_change_pct, 1) == -2.9
+
+
 def test_public_world_gdp_projection_starts_after_the_latest_observed_year():
     series = world_gdp_series(load_analysis_bundle().gdp_annual)
-    backtest = expanding_arima_backtest(series)
-    projection = expanding_arima_projection(series, backtest.order)
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        backtest = expanding_arima_backtest(series)
+        projection = expanding_arima_projection(series, backtest.order)
 
     assert projection.origin_year == int(series.index.max())
     assert projection.years[0] == projection.origin_year + 1
     assert len(projection.years) == 10
     assert projection.years == tuple(range(projection.origin_year + 1, projection.origin_year + 11))
     assert all(low < mid < high for low, mid, high in zip(projection.lower, projection.median, projection.upper))
+    assert _numpy_shape_deprecations(caught) == []

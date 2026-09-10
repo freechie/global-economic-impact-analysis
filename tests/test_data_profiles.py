@@ -10,6 +10,7 @@ import pytest
 from scripts import generate_public_profile as generator
 from src.data_loader import (
     DATASET_SPECS,
+    PUBLIC_OPEN_TABLES,
     DataLoadError,
     load_analysis_bundle,
 )
@@ -29,11 +30,15 @@ def _artifact_bytes(directory: Path) -> dict[str, bytes]:
 def test_generator_is_byte_idempotent(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     output = tmp_path / "public-demo"
     monkeypatch.setattr(generator, "OUTPUT_DIR", output)
-    gdp_source = PUBLIC_PROFILE / "gdp_annual.csv"
-
-    generator.generate(gdp_source)
+    generator.generate(
+        PUBLIC_PROFILE / "gdp_annual.csv",
+        PUBLIC_PROFILE / "gdp_real_annual.csv",
+    )
     first = _artifact_bytes(output)
-    generator.generate(gdp_source)
+    generator.generate(
+        PUBLIC_PROFILE / "gdp_annual.csv",
+        PUBLIC_PROFILE / "gdp_real_annual.csv",
+    )
     second = _artifact_bytes(output)
 
     assert first == second
@@ -48,7 +53,7 @@ def test_manifest_hashes_and_provenance_match_public_files():
     for table_name, entry in manifest["datasets"].items():
         path = PUBLIC_PROFILE / entry["filename"]
         assert hashlib.sha256(path.read_bytes()).hexdigest() == entry["sha256"]
-        if table_name == "gdp_annual":
+        if table_name in PUBLIC_OPEN_TABLES:
             assert entry["classification"] == "open"
             assert entry["source"]["license"] == "CC BY 4.0"
             assert "World Bank" in entry["source"]["name"]

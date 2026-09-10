@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from contextlib import contextmanager
 from dataclasses import dataclass
 import warnings
 
@@ -15,6 +16,9 @@ ARIMA_DIFFERENCE = 1
 ARIMA_FORECAST_STEPS = 10
 CHINA_JAPAN_CROSSING_AFTER_YEAR = 1980
 CHINA_SHARE_START_YEAR = 1990
+NOMINAL_GDP_COLUMN = "nominal_gdp_usd"
+REAL_GDP_COLUMN = "real_gdp_2015_usd"
+OUTPUT_CHECK_YEARS = (2009, 2015, 2020)
 SELECTED_TRAJECTORY_COUNTRIES = (
     "United States",
     "China",
@@ -165,20 +169,71 @@ class NominalGdpStory:
     china_passes_japan_year: int
 
 
-def world_gdp_series(gdp_annual: pd.DataFrame) -> pd.Series:
-    """Return World nominal GDP indexed by calendar year."""
+@dataclass(frozen=True)
+class NominalVsRealChange:
+    year: int
+    nominal_change_pct: float
+    real_change_pct: float
 
-    world = gdp_annual.loc[gdp_annual["country_code"] == "WLD"].sort_values("year")
+
+def _gdp_value_column(gdp_table: pd.DataFrame, value_column: str | None) -> str:
+    if value_column is not None:
+        return value_column
+    has_nominal = NOMINAL_GDP_COLUMN in gdp_table.columns
+    has_real = REAL_GDP_COLUMN in gdp_table.columns
+    if has_nominal and not has_real:
+        return NOMINAL_GDP_COLUMN
+    if has_real and not has_nominal:
+        return REAL_GDP_COLUMN
+    if has_nominal and has_real:
+        raise ValueError("Pass value_column when both nominal and real GDP columns are present")
+    raise ValueError("GDP table needs nominal_gdp_usd or real_gdp_2015_usd")
+
+
+def world_gdp_series(
+    gdp_table: pd.DataFrame, *, value_column: str | None = None
+) -> pd.Series:
+    """Return World GDP indexed by calendar year."""
+
+    column = _gdp_value_column(gdp_table, value_column)
+    world = gdp_table.loc[gdp_table["country_code"] == "WLD"].sort_values("year")
     if world.empty:
-        raise ValueError("gdp_annual has no World (WLD) rows")
+        raise ValueError("GDP table has no World (WLD) rows")
     series = pd.Series(
-        world["nominal_gdp_usd"].to_numpy(dtype=float),
+        world[column].to_numpy(dtype=float),
         index=world["year"].astype(int).to_numpy(),
-        name="nominal_gdp_usd",
+        name=column,
     )
     if series.index.has_duplicates:
         raise ValueError("World GDP has duplicate years")
     return series
+
+
+def nominal_vs_real_changes(
+    nominal: pd.Series,
+    real: pd.Series,
+    years: tuple[int, ...] = OUTPUT_CHECK_YEARS,
+) -> tuple[NominalVsRealChange, ...]:
+    """Compare current-dollar and constant-dollar World GDP changes in named years."""
+
+    nominal_yoy = nominal.sort_index().pct_change() * 100
+    real_yoy = real.sort_index().pct_change() * 100
+    rows = []
+    for year in years:
+        if year not in nominal_yoy.index or year not in real_yoy.index:
+            raise ValueError(f"Missing year {year} in nominal or real World GDP")
+        nominal_change = nominal_yoy.loc[year]
+        real_change = real_yoy.loc[year]
+        if pd.isna(nominal_change) or pd.isna(real_change):
+            raise ValueError(f"Year {year} has no prior-year GDP observation")
+        rows.append(
+            NominalVsRealChange(
+                year=year,
+                nominal_change_pct=float(nominal_change),
+                real_change_pct=float(real_change),
+            )
+        )
+    return tuple(rows)
 
 
 def _country_named_series(gdp_annual: pd.DataFrame, country_name: str) -> pd.Series:
@@ -235,6 +290,19 @@ def nominal_gdp_story(gdp_annual: pd.DataFrame) -> NominalGdpStory:
     )
 
 
+@contextmanager
+def _quiet_statsmodels():
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=ConvergenceWarning)
+        warnings.simplefilter("ignore", category=UserWarning)
+        warnings.filterwarnings(
+            "ignore",
+            message="Setting the shape on a NumPy array has been deprecated",
+            category=DeprecationWarning,
+        )
+        yield
+
+
 def expanding_arima_backtest(
     series: pd.Series,
     *,
@@ -260,15 +328,13 @@ def expanding_arima_backtest(
             predictions: list[float] = []
             converged = True
             for actual in np.log(actual_levels):
-                with warnings.catch_warnings():
-                    warnings.simplefilter("ignore", category=ConvergenceWarning)
-                    warnings.simplefilter("ignore", category=UserWarning)
+                with _quiet_statsmodels():
                     fitted = ARIMA(history, order=order).fit()
-                retvals = getattr(fitted, "mle_retvals", None) or {}
-                if not retvals.get("converged", True):
-                    converged = False
-                    break
-                predictions.append(float(np.exp(fitted.forecast(1)[0])))
+                    retvals = getattr(fitted, "mle_retvals", None) or {}
+                    if not retvals.get("converged", True):
+                        converged = False
+                        break
+                    predictions.append(float(np.exp(fitted.forecast(1)[0])))
                 history.append(float(actual))
             if not converged:
                 continue
@@ -311,11 +377,9 @@ def expanding_arima_projection(
         raise ValueError("ARIMA projection needs a non-empty series")
     origin_year = int(ordered.index.max())
     history = list(np.log(ordered.to_numpy(dtype=float)))
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", category=ConvergenceWarning)
-        warnings.simplefilter("ignore", category=UserWarning)
+    with _quiet_statsmodels():
         fitted = ARIMA(history, order=order).fit(method_kwargs={"maxiter": 1000})
-    forecast = fitted.get_forecast(steps=steps)
+        forecast = fitted.get_forecast(steps=steps)
     median = np.exp(np.asarray(forecast.predicted_mean, dtype=float))
     interval = np.asarray(forecast.conf_int(), dtype=float)
     lower = np.exp(interval[:, 0])
@@ -335,5 +399,5 @@ def projection_decision_text(backtest: ExpandingArimaBacktest) -> str:
     if backtest.publishes_projection:
         return "ARIMA beat the naive baseline. A ten-year projection is published."
     return (
-        "A future projection is not published because ARIMA did not beat the naive baseline."
+        "A future projection is not published. ARIMA did not beat the naive baseline."
     )

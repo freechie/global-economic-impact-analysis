@@ -24,3 +24,8 @@ dev = [
 [tool.uv]
 package = false
 required-version = "==0.11.29"
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    "error:Setting the shape on a NumPy array has been deprecated:DeprecationWarning",
+]

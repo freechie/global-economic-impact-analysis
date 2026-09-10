@@ -13,37 +13,62 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from src.analysis_utils import WORLD_BANK_AGGREGATE_CODES
-from src.data_loader import DATASET_SPECS, PUBLIC_PROFILE_ID, SCHEMA_VERSION
+from src.data_loader import (
+    DATASET_SPECS,
+    PUBLIC_OPEN_TABLES,
+    PUBLIC_PROFILE_ID,
+    SCHEMA_VERSION,
+)
+
+OPEN_GDP_SOURCES = {
+    "gdp_annual": {
+        "name": "World Bank Open Data, GDP (current US$)",
+        "open_filename": "gdp.csv",
+        "series_code": "NY.GDP.MKTP.CD",
+        "url": "https://data.worldbank.org/indicator/NY.GDP.MKTP.CD",
+        "value_column": "nominal_gdp_usd",
+    },
+    "gdp_real_annual": {
+        "name": "World Bank Open Data, GDP (constant 2015 US$)",
+        "open_filename": "gdp-real.csv",
+        "series_code": "NY.GDP.MKTP.KD",
+        "url": "https://data.worldbank.org/indicator/NY.GDP.MKTP.KD",
+        "value_column": "real_gdp_2015_usd",
+    },
+}
 
 OUTPUT_DIR = ROOT / "data" / "profiles" / PUBLIC_PROFILE_ID
 SYNTHETIC_DISCLOSURE = "Synthetic demonstration data. Values are fictional and are not observed measurements."
 
 
-def _gdp_source(explicit_source: Path | None) -> Path:
+def _table_source(
+    explicit_source: Path | None, *, canonical_filename: str, open_filename: str
+) -> Path:
     candidates = [
         explicit_source,
-        OUTPUT_DIR / "gdp_annual.csv",
-        ROOT / "data" / "open" / "world-bank" / "gdp.csv",
+        OUTPUT_DIR / canonical_filename,
+        ROOT / "data" / "open" / "world-bank" / open_filename,
     ]
     for candidate in candidates:
         if candidate is not None and candidate.is_file():
             return candidate
-    raise FileNotFoundError("No World Bank GDP source is available")
+    raise FileNotFoundError(f"No World Bank source is available for {canonical_filename}")
 
 
-def normalize_gdp(source: Path) -> pd.DataFrame:
+def normalize_gdp(source: Path, *, table_name: str) -> pd.DataFrame:
+    open_source = OPEN_GDP_SOURCES[table_name]
+    canonical = list(DATASET_SPECS[table_name].columns)
+    value_column = open_source["value_column"]
     frame = pd.read_csv(source)
-    canonical = list(DATASET_SPECS["gdp_annual"].columns)
     if list(frame.columns) == canonical:
         result = frame.copy()
         result["is_aggregate"] = result["is_aggregate"].astype(str).str.lower()
         return result.sort_values(["country_code", "year"]).reset_index(drop=True)
 
+    series_code = open_source["series_code"]
     frame["Year"] = pd.to_numeric(frame["Year"], errors="coerce")
     frame["GDP"] = pd.to_numeric(frame["GDP"], errors="coerce")
-    frame = frame[
-        frame["Series Code"].astype(str).str.strip().eq("NY.GDP.MKTP.CD")
-    ].copy()
+    frame = frame[frame["Series Code"].astype(str).str.strip().eq(series_code)].copy()
     frame["Country Name"] = frame["Country Name"].astype("string").str.strip()
     frame["Country Code"] = frame["Country Code"].astype("string").str.strip()
     frame = frame.dropna(subset=["Country Name", "Country Code", "Year", "GDP"])
@@ -52,8 +77,10 @@ def normalize_gdp(source: Path) -> pd.DataFrame:
         & frame["Country Code"].ne("0")
         & frame["GDP"].gt(0)
     ].copy()
+    if frame.empty:
+        raise ValueError(f"{source} has no {series_code} rows")
     frame["year"] = frame["Year"].astype(int)
-    frame["nominal_gdp_usd"] = frame["GDP"].round(2)
+    frame[value_column] = frame["GDP"].round(2)
     frame["country_name"] = frame["Country Name"]
     frame["country_code"] = frame["Country Code"]
     frame["is_aggregate"] = (
@@ -209,10 +236,27 @@ def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def generate(gdp_source: Path | None = None) -> None:
+def generate(
+    gdp_source: Path | None = None, gdp_real_source: Path | None = None
+) -> None:
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     tables = {
-        "gdp_annual": normalize_gdp(_gdp_source(gdp_source)),
+        "gdp_annual": normalize_gdp(
+            _table_source(
+                gdp_source,
+                canonical_filename="gdp_annual.csv",
+                open_filename=OPEN_GDP_SOURCES["gdp_annual"]["open_filename"],
+            ),
+            table_name="gdp_annual",
+        ),
+        "gdp_real_annual": normalize_gdp(
+            _table_source(
+                gdp_real_source,
+                canonical_filename="gdp_real_annual.csv",
+                open_filename=OPEN_GDP_SOURCES["gdp_real_annual"]["open_filename"],
+            ),
+            table_name="gdp_real_annual",
+        ),
         "arms_by_category_annual": arms_by_category_annual(),
         "arms_by_entity_annual": arms_by_entity_annual(),
         "aircraft_orders_monthly": aircraft_orders_monthly(),
@@ -227,11 +271,12 @@ def generate(gdp_source: Path | None = None) -> None:
     datasets = {}
     for table_name, spec in DATASET_SPECS.items():
         entry = {
-            "classification": "open" if table_name == "gdp_annual" else "synthetic",
+            "classification": "open" if table_name in PUBLIC_OPEN_TABLES else "synthetic",
             "filename": spec.filename,
             "sha256": _sha256(OUTPUT_DIR / spec.filename),
         }
-        if table_name == "gdp_annual":
+        if table_name in PUBLIC_OPEN_TABLES:
+            open_source = OPEN_GDP_SOURCES[table_name]
             entry["source"] = {
                 "changes": "Normalized to canonical columns, removed invalid and nonpositive observations, and added aggregate flags.",
                 "coverage": {
@@ -239,9 +284,9 @@ def generate(gdp_source: Path | None = None) -> None:
                     "start_year": int(tables[table_name]["year"].min()),
                 },
                 "license": "CC BY 4.0",
-                "name": "World Bank Open Data, GDP (current US$)",
-                "series_code": "NY.GDP.MKTP.CD",
-                "url": "https://data.worldbank.org/indicator/NY.GDP.MKTP.CD",
+                "name": open_source["name"],
+                "series_code": open_source["series_code"],
+                "url": open_source["url"],
             }
         else:
             entry["generator"] = {
@@ -265,8 +310,9 @@ def generate(gdp_source: Path | None = None) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--gdp-source", type=Path)
+    parser.add_argument("--gdp-real-source", type=Path)
     args = parser.parse_args()
-    generate(args.gdp_source)
+    generate(args.gdp_source, args.gdp_real_source)
 
 
 if __name__ == "__main__":

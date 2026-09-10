@@ -8,8 +8,8 @@ ROOT = Path(__file__).resolve().parents[1]
 NOTEBOOK_PATH = ROOT / "Global Economic Impact Analysis.ipynb"
 OPEN_CHART_IDS = (
     "gdp-world-trend",
+    "gdp-nominal-vs-real",
     "gdp-selected-trajectories",
-    "gdp-annual-change",
     "gdp-latest-ranking",
     "gdp-arima-backtest",
     "gdp-arima-projection",
@@ -64,12 +64,25 @@ def test_every_saved_figure_discloses_open_gdp_provenance():
     figures = _figures()
 
     assert all(figure["layout"]["meta"]["classification"] == "open" for figure in figures)
-    assert all(figure["layout"]["meta"]["table"] == "gdp_annual" for figure in figures)
+    assert all(
+        figure["layout"]["meta"]["table"] in {"gdp_annual", "gdp_real_annual"}
+        for figure in figures
+    )
     for figure in figures:
         title = figure["layout"]["title"]["text"]
         assert "World Bank Open Data" in title
         assert "CC BY 4.0" in title
         assert "World Bank Open Data" in figure["layout"]["meta"]["provenance"]
+
+
+def test_nominal_vs_real_figure_compares_current_and_constant_series():
+    names = [trace.get("name") for trace in _figure("gdp-nominal-vs-real")["data"]]
+    meta = _figure("gdp-nominal-vs-real")["layout"]["meta"]
+
+    assert "Current US$" in names
+    assert "Constant 2015 US$" in names
+    assert meta["table"] == "gdp_real_annual"
+    assert "constant 2015" in meta["provenance"]
 
 
 def test_ranking_figure_is_gdp_only():
@@ -139,6 +152,11 @@ def test_readme_leads_with_computed_gdp_findings():
     assert "4.574%" in readme
     assert "China passed Japan in 2010" in readme
     assert "ten-year projection is published" in readme
+    assert "2009: current -5.2%, constant 2015 -1.3%." in readme
+    assert "2015: current -5.5%, constant 2015 3.1%." in readme
+    assert "2020: current -2.7%, constant 2015 -2.9%." in readme
+    assert "2015 is a dollar year" in readme
+    assert "2009 and 2020 are real contractions" in readme
 
 
 def test_readme_uses_public_paths_and_safe_previews():
@@ -153,13 +171,16 @@ def test_readme_uses_public_paths_and_safe_previews():
     assert "data/profiles/public-demo" in readme
     assert "data/open/world-bank" in readme
     assert "uv sync --locked --dev" in readme
-    assert "make notebook" in readme
     assert "make verify" in readme
+    assert "make notebook" in readme
+    assert "make fetch" in readme
+    assert "make fetch-gdp" not in readme
     assert "GEIA_DATA_DIR" in readme
     assert preview_references == {
-        "docs/previews/selected-gdp-trajectories.png",
         "docs/previews/gdp-arima-backtest.png",
         "docs/previews/gdp-arima-projection.png",
+        "docs/previews/gdp-nominal-vs-real.png",
+        "docs/previews/selected-gdp-trajectories.png",
         "docs/previews/world-gdp-trend.png",
     }
     assert all((ROOT / reference).is_file() for reference in preview_references)

@@ -76,6 +76,22 @@
         "url": "https://data.worldbank.org/indicator/NY.GDP.MKTP.CD"
       }
     },
+    "gdp_real_annual": {
+      "classification": "open",
+      "filename": "gdp_real_annual.csv",
+      "sha256": "28b7e83ee63777fe559b7f20ab1f3f2078e19dd04ed2bfdefdc30c628bc2d314",
+      "source": {
+        "changes": "Normalized to canonical columns, removed invalid and nonpositive observations, and added aggregate flags.",
+        "coverage": {
+          "end_year": 2025,
+          "start_year": 1960
+        },
+        "license": "CC BY 4.0",
+        "name": "World Bank Open Data, GDP (constant 2015 US$)",
+        "series_code": "NY.GDP.MKTP.KD",
+        "url": "https://data.worldbank.org/indicator/NY.GDP.MKTP.KD"
+      }
+    },
     "homebuilder_confidence_annual": {
       "classification": "synthetic",
       "filename": "homebuilder_confidence_annual.csv",
